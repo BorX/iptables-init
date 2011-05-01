@@ -1,0 +1,33 @@
+#!/bin/sh
+# Table mangle
+
+disableTable_mangle() {
+  TABLE='mangle'
+
+  # Reinit of table
+  modTable --flush
+  modTable --delete-chain
+
+  # Policies for each chain of table mangle
+  modTable --policy PREROUTING  ACCEPT
+  modTable --policy OUTPUT      ACCEPT
+  modTable --policy INPUT       ACCEPT
+  modTable --policy FORWARD     ACCEPT
+  modTable --policy POSTROUTING ACCEPT
+}
+
+enableTable_mangle() {
+  TABLE='mangle'
+
+  # Reinit of table
+  modTable --flush
+  modTable --delete-chain
+
+  # Policies for each chain of table mangle
+  modTable --policy PREROUTING  ACCEPT
+  modTable --policy OUTPUT      ACCEPT
+  modTable --policy INPUT       ACCEPT
+  modTable --policy FORWARD     ACCEPT
+  modTable --policy POSTROUTING ACCEPT
+}
+

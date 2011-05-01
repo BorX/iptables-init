@@ -1,0 +1,29 @@
+#!/bin/sh
+# Table nat
+
+disableTable_nat() {
+  TABLE='nat'
+
+  # Reinit of table
+  modTable --flush
+  modTable --delete-chain
+
+  # Policies for each chain of table nat
+  modTable --policy PREROUTING  ACCEPT
+  modTable --policy OUTPUT      ACCEPT
+  modTable --policy POSTROUTING ACCEPT
+}
+
+enableTable_nat() {
+  TABLE='nat'
+
+  # Reinit of table
+  modTable --flush
+  modTable --delete-chain
+
+  # Policies for each chain of table nat
+  modTable --policy PREROUTING  ACCEPT
+  modTable --policy OUTPUT      ACCEPT
+  modTable --policy POSTROUTING ACCEPT
+}
+

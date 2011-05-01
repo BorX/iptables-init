@@ -1,0 +1,27 @@
+#!/bin/sh
+# Table raw
+
+disableTable_raw() {
+  TABLE='raw'
+
+  # Reinit of table
+  modTable --flush
+  modTable --delete-chain
+
+  # Policies for each chain of table raw
+  modTable --policy PREROUTING  ACCEPT
+  modTable --policy OUTPUT      ACCEPT
+}
+
+enableTable_raw() {
+  TABLE='raw'
+
+  # Reinit of table
+  modTable --flush
+  modTable --delete-chain
+
+  # Policies for each chain of table raw
+  modTable --policy PREROUTING  ACCEPT
+  modTable --policy OUTPUT      ACCEPT
+}
+

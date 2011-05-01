@@ -1,0 +1,308 @@
+#!/bin/bash
+# Table filter
+#
+# Sources :
+# - http://www.guihomeweb.fr/files-blog/EDA491/Lab2/firewall_Guillaume_openSource.txt
+
+# - http://lists.netfilter.org/pipermail/netfilter/2003-December/048816.html
+# - http://memoire-grise-liberee.fr.eu.org/Linux/IpTables/FAQ/limit_flood/
+# - http://memoire-grise-liberee.fr.eu.org/Linux/IpTables/FAQ/drop_xmas_nullscan/
+# - http://www.cyberciti.biz/tips/linux-iptables-10-how-to-block-common-attack.html
+# - http://forum.malekal.com/configuration-iptables-t28084.html
+# - http://www.linux-france.org/prj/inetdoc/guides/iptables-tutorial/commonproblems.html
+# - http://www.linux-france.org/prj/inetdoc/guides/iptables-tutorial/index.html
+# - http://bodhizazen.net/Tutorials/iptables/
+
+disableTable_filter() {
+  TABLE='filter'
+
+  # Reinit of table
+  modTable --flush
+  modTable --delete-chain
+
+  # Policies for each chain of table filter
+  modTable --policy INPUT   ACCEPT
+  modTable --policy OUTPUT  ACCEPT
+  modTable --policy FORWARD ACCEPT
+}
+
+enableTable_filter() {
+  TABLE='filter'
+
+  # Reinit of table
+  modTable --flush
+  modTable --delete-chain
+
+  # Policies for each chain of table filter
+  modTable --policy INPUT   DROP
+  modTable --policy OUTPUT  DROP
+  modTable --policy FORWARD DROP
+
+  # Decomposing chain INPUT by protocol
+  modTable --new-chain TCP_INPUT
+  modTable --new-chain UDP_INPUT
+  modTable --new-chain ICMP_INPUT
+  modTable --new-chain GLOBAL_INPUT
+  addToChain INPUT TCP_INPUT  --protocol tcp
+  addToChain INPUT UDP_INPUT  --protocol udp
+  addToChain INPUT ICMP_INPUT --protocol icmp
+
+  # Adding chains for filtering allowed packets before each chain TCP_INPUT, UDP_INPUT and ICMP_INPUT
+  modTable --new-chain TCP_INPUT_ALLOWED
+  modTable --new-chain UDP_INPUT_ALLOWED
+  modTable --new-chain ICMP_INPUT_ALLOWED
+  addToChain TCP_INPUT  TCP_INPUT_ALLOWED
+  addToChain UDP_INPUT  UDP_INPUT_ALLOWED
+  addToChain ICMP_INPUT ICMP_INPUT_ALLOWED
+
+  # Decomposing chain OUTPUT by protocol
+  modTable --new-chain TCP_OUTPUT
+  modTable --new-chain UDP_OUTPUT
+  modTable --new-chain ICMP_OUTPUT
+  modTable --new-chain GLOBAL_OUTPUT
+  addToChain OUTPUT TCP_OUTPUT  --protocol tcp
+  addToChain OUTPUT UDP_OUTPUT  --protocol udp
+  addToChain OUTPUT ICMP_OUTPUT --protocol icmp
+
+  # Adding chains for filtering allowed packets before each chain TCP_OUTPUT, UDP_OUTPUT and ICMP_OUTPUT
+  modTable --new-chain TCP_OUTPUT_ALLOWED
+  modTable --new-chain UDP_OUTPUT_ALLOWED
+  modTable --new-chain ICMP_OUTPUT_ALLOWED
+  addToChain TCP_OUTPUT  TCP_OUTPUT_ALLOWED
+  addToChain UDP_OUTPUT  UDP_OUTPUT_ALLOWED
+  addToChain ICMP_OUTPUT ICMP_OUTPUT_ALLOWED
+
+  # Adding chains for filtering allowed packets before GLOBAL_FORWARD
+  modTable --new-chain FORWARD_ALLOWED
+  modTable --new-chain GLOBAL_FORWARD
+  addToChain FORWARD FORWARD_ALLOWED
+  addToChain FORWARD GLOBAL_FORWARD
+
+  # Personalization have priority on the rest
+  persoFilter
+
+  # Allow changes on ports > 1024
+  addToChain TCP_INPUT_ALLOWED  RETURN --match state --state ESTABLISHED,RELATED --protocol tcp --dport 1024: # checked
+
+  # Allow client to create broadcast and multicast request
+  #     >> Allow DHCP request / response
+  addToChain UDP_INPUT_ALLOWED  RETURN --protocol udp --source-port 67 --destination-port 68 # checked
+  addToChain UDP_OUTPUT_ALLOWED RETURN --protocol udp --source-port 68 --destination-port 67 # checked
+
+  # Frequent attacks defender
+  checkTCPComplianceInputPackets
+  antiScan
+  icmpProtect
+  dropSuspiciousPackets
+  dropInvalidIP
+
+  # Permettre à une connexion deja ouverte de recevoir du trafic
+# TODO Est-ce bien necessaire ? En ACCEPT ?
+# addToChain GLOBAL_OUTPUT ACCEPT --match state --state ESTABLISHED,RELATED
+
+  # Permettre d'aller partout sauf sur le localhost
+# addToChain GLOBAL_OUTPUT ACCEPT ! --destination 127.0.0.0/8
+
+
+  # All packets allowed must be returned. Others are dropped.
+  addToChain TCP_INPUT_ALLOWED   DROP          TCP_IN_REFUSED
+  addToChain UDP_INPUT_ALLOWED   DROP          UDP_IN_REFUSED
+  addToChain ICMP_INPUT_ALLOWED  DROP          ICMP_IN_REFUSED
+
+  addToChain TCP_OUTPUT_ALLOWED  DROP          TCP_OUT_REFUSED
+  addToChain UDP_OUTPUT_ALLOWED  DROP          UDP_OUT_REFUSED
+  addToChain ICMP_OUTPUT_ALLOWED DROP          ICMP_OUT_REFUSED
+
+  addToChain FORWARD_ALLOWED     DROP          FORWARD_REFUSED
+
+  addToChain TCP_OUTPUT          GLOBAL_OUTPUT
+  addToChain UDP_OUTPUT          GLOBAL_OUTPUT
+  addToChain ICMP_OUTPUT         GLOBAL_OUTPUT
+
+$ANTI_FLOOD_ENABLED || {
+  addToChain TCP_INPUT   GLOBAL_INPUT
+  addToChain UDP_INPUT   GLOBAL_INPUT
+  addToChain ICMP_INPUT  GLOBAL_INPUT
+} && {
+  # Accept established connection
+  addToChain TCP_INPUT   GLOBAL_INPUT  --match state --state ESTABLISHED,RELATED
+  addToChain TCP_INPUT   GLOBAL_INPUT  --match limit --limit  1/s --limit-burst 3 --protocol tcp --syn # checked
+  addToChain UDP_INPUT   GLOBAL_INPUT  --match limit --limit 10/s
+  addToChain ICMP_INPUT  GLOBAL_INPUT  --match limit --limit  1/s --limit-burst 2 # checked
+  # Ping flooding - Echo request (max 1/s) - Echo reply (max 1/s)
+# addToChain ICMP_INPUT  GLOBAL_INPUT  --match limit --limit  1/s --limit-burst 1 --protocol icmp --icmp-type echo-request # checked
+# addToChain ICMP_OUTPUT GLOBAL_OUTPUT --match limit --limit  1/s --limit-burst 1 --protocol icmp --icmp-type echo-reply # checked
+  addToChain TCP_INPUT   DROP         TCP_INPUT_FLOOD
+  addToChain UDP_INPUT   DROP         UDP_INPUT_FLOOD
+  addToChain ICMP_INPUT  DROP         ICMP_INPUT_FLOOD
+
+  # Other method :
+# addToChain GLOBAL_INPUT   ACCEPT             --match limit --limit  1/s --limit-burst 1
+# addToChain GLOBAL_OUTPUT  ACCEPT             --match limit --limit  1/s --limit-burst 1
+# addToChain GLOBAL_FORWARD ACCEPT             --match limit --limit  1/s --limit-burst 1
+# addToChain GLOBAL_INPUT   DROP INPUT_FLOOD
+# addToChain GLOBAL_OUTPUT  DROP OUTPUT_FLOOD
+# addToChain GLOBAL_FORWARD DROP FORWARD_FLOOD
+}
+  addToChain GLOBAL_INPUT   ACCEPT
+  addToChain GLOBAL_OUTPUT  ACCEPT
+  addToChain GLOBAL_FORWARD ACCEPT
+}
+
+# Anti-scan
+###############################################################################
+antiScan() {
+  # XMAS-NULL >> Rejet des paquets vide
+  addToChain TCP_INPUT   DROP   TCP_SCAN_01 --protocol tcp --tcp-flags ALL NONE # checked
+
+  # XMAS-TREE >> Rejet des paquets
+  addToChain TCP_INPUT   DROP   TCP_SCAN_02 --protocol tcp --tcp-flags ALL ALL # checked
+
+  # SYN/RST Scan
+  addToChain TCP_INPUT   DROP   TCP_SCAN_03 --protocol tcp --tcp-flags SYN,RST SYN,RST # checked
+
+  # SYN/FIN Scan
+  addToChain TCP_INPUT   DROP   TCP_SCAN_04 --protocol tcp --tcp-flags SYN,FIN SYN,FIN # checked
+
+  # SYN/ACK Scan
+  addToChain TCP_INPUT   DROP   TCP_SCAN_05 --protocol tcp --tcp-flags SYN,ACK SYN,ACK # checked
+  insToChain TCP_SCAN_05 RETURN             --protocol tcp --match state --state ESTABLISHED,RELATED
+
+  # FIN/RST Scan
+  addToChain TCP_INPUT   DROP   TCP_SCAN_06 --protocol tcp --tcp-flags FIN,RST FIN,RST # checked
+
+  # FIN/ACK Scan
+  addToChain TCP_INPUT   DROP   TCP_SCAN_07 --protocol tcp --match tcp --tcp-flags FIN,ACK FIN # checked
+
+  # ACK/URG Scan
+  addToChain TCP_INPUT   DROP   TCP_SCAN_08 --protocol tcp --tcp-flags ACK,URG URG # checked
+
+  # FIN/URG/PSH Scan
+  addToChain TCP_INPUT   DROP   TCP_SCAN_09 --protocol tcp --tcp-flags FIN,URG,PSH FIN,URG,PSH # checked
+
+  # Stealth XMAS Scan
+  addToChain TCP_INPUT   DROP   TCP_SCAN_10 --protocol tcp --tcp-flags ALL FIN,PSH,URG # checked
+
+  # Protection contre le scan des ports
+# addToChain TCP_INPUT   DROP   TCP_SCAN_11 --protocol tcp --tcp-flags FIN,SYN,RST,ACK SYN # checked
+  addToChain TCP_INPUT   DROP   TCP_SCAN_12 --protocol tcp --tcp-flags FIN,SYN,RST,PSH,ACK,URG NONE # checked
+
+  # XMAS-PSH Scan
+  addToChain TCP_INPUT   DROP   TCP_SCAN_13 --protocol tcp --tcp-flags ALL SYN,RST,ACK,FIN,URG # checked
+
+  # Fin de connexion TCP 
+  addToChain TCP_INPUT   DROP   TCP_SCAN_14 --protocol tcp --tcp-flags ALL FIN # checked
+}
+
+# ICMP protect
+###############################################################################
+icmpProtect() {
+  $FILTER_DROP_ICMP && {
+    # POLICY DROP ICMP (recommanded, but might cause some troubles)
+    addToChain ICMP_OUTPUT         DROP   ICMP_OUT_4 # checked
+    addToChain ICMP_INPUT          DROP   ICMP_IN # checked
+  } || {
+    # Disable accept ping (echo request <> ICMP type 8)
+   addToChain ICMP_INPUT           DROP   ICMP_REQUEST_1 --protocol icmp --icmp-type echo-request # checked
+
+    # Disable PING response (echo reply <> ICMP type 0)
+   addToChain ICMP_OUTPUT          DROP   ICMP_REPLY_1   --protocol icmp --icmp-type echo-reply # checked
+
+    # DO NOT SEND (but accept !) :
+    # - Network Unreacheable
+    # - Host Unreacheable                               -- avoid FIN Scan
+    # - Protocol Unreacheable                           -- avoid FIN Scan
+    # - Port Unreacheable                               -- avoid UDP Scan
+    # - Destination Network Administratively Prohibited -- avoid FIN Scan
+    # - Destination Host    Administratively Prohibited -- avoid FIN Scan
+    # - Communication Prohibited by filtering           -- avoid FIN Scan
+    addToChain ICMP_OUTPUT         DROP   ICMP_OUT_2     --protocol icmp --icmp-type destination-unreachable # checked
+    addToChain ICMP_INPUT_ALLOWED  RETURN                --protocol icmp --icmp-type destination-unreachable # checked
+    # Do not send TTL Exceeded
+    addToChain ICMP_OUTPUT         DROP   ICMP_OUT_3     --protocol icmp --icmp-type time-exceeded # checked
+    # Accept UDP source-quench
+    addToChain ICMP_INPUT_ALLOWED  RETURN                --protocol icmp --icmp-type source-quench # checked
+
+    # POLICY ACCEPT ICMP (not recommanded, but better performances)
+    addToChain ICMP_OUTPUT_ALLOWED RETURN                --protocol icmp --match state --state NEW,ESTABLISHED,RELATED # checked
+    addToChain ICMP_INPUT_ALLOWED  RETURN # checked
+  }
+}
+
+# Verification de la conformite TCP des paquets en entree
+###############################################################################
+checkTCPComplianceInputPackets() {
+  # All new incoming TCP should be SYN first
+  addToChain TCP_INPUT DROP TCP_NON_CONFORME_1 --protocol tcp ! --syn --match state --state NEW # Checked
+
+  # Verification des flags TCP -- flag 64, 128 = bogues
+  addToChain TCP_INPUT DROP TCP_NON_CONFORME_2 --protocol tcp --tcp-option  64 # checked
+  addToChain TCP_INPUT DROP TCP_NON_CONFORME_3 --protocol tcp --tcp-option 128 # checked
+}
+
+# Removal of suspicious packages
+###############################################################################
+dropSuspiciousPackets() {
+  # Drop all malformed packets
+  addToChain GLOBAL_INPUT  DROP MALFORMED_INPUT  --match state --state INVALID # checked
+  addToChain GLOBAL_OUTPUT DROP MALFORMED_OUTPUT --match state --state INVALID # checked
+
+  # Protection contre la fragmentation
+  addToChain GLOBAL_INPUT  DROP FRAGMENT_INPUT   --fragment # checked
+  addToChain GLOBAL_OUTPUT DROP FRAGMENT_OUTPUT  --fragment # checked
+}
+
+# Protection @IP invalides
+###############################################################################
+dropInvalidIP() {
+  # Adresses reservees, dont on ne doit pas recevoir de data !
+  addToChain GLOBAL_INPUT   DROP   INPUT_SPOOF_01  --source      0.0.0.0/8 # checked
+  addToChain GLOBAL_OUTPUT  DROP   OUTPUT_SPOOF_01 --destination 0.0.0.0/8
+
+  # Need to adjust ! It depends on your LAN
+  addToChain GLOBAL_INPUT   DROP   INPUT_SPOOF_02  --source      10.0.0.0/8 # checked
+  addToChain GLOBAL_OUTPUT  DROP   OUTPUT_SPOOF_02 --destination 10.0.0.0/8
+# insToChain INPUT_SPOOF_02 RETURN                 --in-interface tun0
+  addToChain GLOBAL_INPUT   DROP   INPUT_SPOOF_03  --source      172.16.0.0/12 # checked
+  addToChain GLOBAL_OUTPUT  DROP   OUTPUT_SPOOF_03 --destination 172.16.0.0/12
+# addToChain GLOBAL_INPUT   DROP   INPUT_SPOOF_04  --source      192.168.0.0/16 # checked
+# addToChain GLOBAL_OUTPUT  DROP   OUTPUT_SPOOF_04 --destination 192.168.0.0/16
+
+  # Auto-Configuration address
+  addToChain GLOBAL_INPUT   DROP   INPUT_SPOOF_05  --source      169.254.0.0/16 # checked
+  addToChain GLOBAL_OUTPUT  DROP   OUTPUT_SPOOF_05 --destination 169.254.0.0/16
+
+  # Reserved IP address range
+  addToChain GLOBAL_INPUT   DROP   INPUT_SPOOF_06  --source      240.0.0.0/4 # checked
+  addToChain GLOBAL_OUTPUT  DROP   OUTPUT_SPOOF_06 --destination 240.0.0.0/4
+
+  # Do not accept Multicast address
+  addToChain GLOBAL_INPUT   DROP   INPUT_SPOOF_07  --source      224.0.0.0/3 # checked
+  addToChain GLOBAL_OUTPUT  DROP   OUTPUT_SPOOF_07 --destination 224.0.0.0/3 # checked
+
+  # Must allow to use the IP @ of the wan interface !
+# addToChain ICMP_OUTPUT    DROP   OUTPUT_SPOOF_08 --in-interface eth0 ! --source $IP_LAN
+# addToChain ICMP_OUTPUT    DROP   OUTPUT_SPOOF_09 --destination 224.0.0.0/3
+
+  # Localhost address cannot be send and receive on network interfaces
+  addToChain GLOBAL_INPUT   DROP   INPUT_SPOOF_10   --in-interface  eth0   --source      127.0.0.0/8 # checked
+  addToChain GLOBAL_INPUT   DROP   INPUT_SPOOF_11   --in-interface  eth0   --destination 127.0.0.0/8 # checked
+  addToChain GLOBAL_INPUT   DROP   OUTPUT_SPOOF_10  --out-interface eth0   --source      127.0.0.0/8
+  addToChain GLOBAL_INPUT   DROP   OUTPUT_SPOOF_11  --out-interface eth0   --destination 127.0.0.0/8
+  addToChain GLOBAL_INPUT   DROP   INPUT_SPOOF_12   --in-interface  lo   ! --source      127.0.0.0/8
+  addToChain GLOBAL_INPUT   DROP   INPUT_SPOOF_13   --in-interface  lo   ! --destination 127.0.0.0/8
+  addToChain GLOBAL_INPUT   DROP   OUTPUT_SPOOF_12  --out-interface lo   ! --source      127.0.0.0/8
+  addToChain GLOBAL_INPUT   DROP   OUTPUT_SPOOF_13  --out-interface lo   ! --destination 127.0.0.0/8
+
+  # Avoid LAN @ spoofing
+# addToChain GLOBAL_INPUT   DROP   INPUT_SPOOF_12  --source $IP_LAN
+
+  # Do not forward localhost packets !
+  addToChain GLOBAL_FORWARD DROP   GLOBAL_FORWARD_1 --source      127.0.0.0/8 # checked
+  addToChain GLOBAL_FORWARD DROP   GLOBAL_FORWARD_2 --destination 127.0.0.0/8 # checked
+
+  # !!!!!! IMPORTANT !!!!!!
+  # INGRESS FILTERING RULE >>> Do not accept LAN IP@ on WAN interface !
+  # EGRESS  FILTERING RULE <<< Do not allow output IP@ if they don't belong to the LAN !
+}
+

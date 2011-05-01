@@ -1,0 +1,34 @@
+#!/bin/bash
+
+persoFilter() {
+  # Autorisation acces SSH
+  addToChain TCP_INPUT_ALLOWED   RETURN --protocol tcp --source      trust1 --dport  22
+  addToChain TCP_OUTPUT_ALLOWED  RETURN --protocol tcp --destination trust1 --sport  22
+
+  addToChain TCP_INPUT_ALLOWED   RETURN --protocol tcp --source      trust2 --dport  22
+  addToChain TCP_OUTPUT_ALLOWED  RETURN --protocol tcp --destination trust2 --sport  22
+
+  # Autorisation DNS Numericable
+  addToChain UDP_INPUT_ALLOWED   RETURN --protocol udp --source      89.2.0.1 --sport 53
+  addToChain UDP_OUTPUT_ALLOWED  RETURN --protocol udp --destination 89.2.0.1 --dport 53
+  addToChain UDP_INPUT_ALLOWED   RETURN --protocol udp --source      89.2.0.2 --sport 53
+  addToChain UDP_OUTPUT_ALLOWED  RETURN --protocol udp --destination 89.2.0.2 --dport 53
+
+  # Autoriser les requetes Whois
+  addToChain TCP_OUTPUT_ALLOWED  RETURN --protocol tcp --dport  43
+  # Autoriser les requetes HTTP
+  addToChain TCP_OUTPUT_ALLOWED  RETURN --protocol tcp --dport  80
+  # Autoriser les requetes HTTPS
+  addToChain TCP_OUTPUT_ALLOWED  RETURN --protocol tcp --dport 443
+
+  # Autoriser les requetes HTTPS chez Google
+# addToChain TCP_OUTPUT_ALLOWED  RETURN --protocol tcp --destination 209.85.0.0/16  --dport 443
+  # Autoriser les connexions SSH chez GitHub
+  addToChain TCP_OUTPUT_ALLOWED  RETURN --protocol tcp --destination 207.97.227.239 --dport  22
+
+  # Suppression immediate des tentatives des Windows environnants (pour eviter pollution des logs)
+  addToChain UDP_INPUT_ALLOWED  DROP    --protocol udp --source trustWin --sport  68 --destination 255.255.255.255 --dport  67
+  addToChain UDP_INPUT_ALLOWED  DROP    --protocol udp --source trustWin --sport 137 --destination 192.168.22.255  --dport 137
+  addToChain UDP_INPUT_ALLOWED  DROP    --protocol udp --source trustWin --sport 138 --destination 192.168.22.255  --dport 138
+}
+
