@@ -12,6 +12,7 @@
 # - http://www.linux-france.org/prj/inetdoc/guides/iptables-tutorial/commonproblems.html
 # - http://www.linux-france.org/prj/inetdoc/guides/iptables-tutorial/index.html
 # - http://bodhizazen.net/Tutorials/iptables/
+# - http://www.taltan.fr/post/2006/06/08/21-netfilter-scripts-de-configuration-iptables
 
 disableTable_filter() {
   TABLE='filter'
