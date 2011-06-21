@@ -1,8 +1,11 @@
-# Installation
+Installation
+============
 ToDo Documentation
 
-# Utilisation
-## Configuration
+Utilisation
+===========
+Configuration
+-------------
 Pour tous les détails, voir § Fonctionnement.
 
 ### iptables-config
@@ -16,10 +19,12 @@ ToDo Documentation
 Modification des règles personnalisables
 ToDo Documentation
 
-## Arrêt
+Arrêt
+-----
 `# iptables-init stop`
 
-## Lancement
+Lancement
+---------
 `# ./iptables-init start`
 
 Note :
@@ -27,18 +32,22 @@ Si le script est exécuté via une connexion sur un serveur distant (par exemple
 Pour limiter un éventuel blocage à seulement 2 minutes :
 `# ./iptables-init start; sleep 120; ./iptables-init stop`
 
-# Objectifs
+Objectifs
+=========
 Easy initialization iptables rules
 Shell script to easily initialize iptables rules by incorporating recurrent security
 
-## Tracer efficacement dans les fichiers de log les paquets bloqués
+Tracer efficacement dans les fichiers de log les paquets bloqués
+----------------------------------------------
 ToDo Documentation
 
-## Proposer des barrières pour contrer les attaques les plus courantes
+Proposer des barrières pour contrer les attaques les plus courantes
+----------------------------------------------
 XMAS, NULL-NULL, paquets fragmentés, flood, ...
 ToDo Documentation
 
-## Organiser l’administration des règles Iptables
+Organiser l’administration des règles Iptables
+----------------------------------------------
 Ce script se distingue des autres scripts d'initialisation d'iptables.
 Son organisation modulaire le rend plus simple à comprendre, à modifier et donc à faire évoluer.
 
@@ -50,12 +59,17 @@ Cette organisation est particulièrement intéressante pour gérer ses scripts e
 Ce script propose une organisation de découpage modulaire permettant d'isoler ses propres règles iptables des autres règles.
 
 
-# Fonctionnement
+Fonctionnement
+==============
 ToDo Documentation
 
-# ToDo
-## Documentation
+ToDo
+====
+Documentation
+-------------
 
-## Traduction
+Traduction
+----------
 ### Commentaires
 ### Documentation
+
