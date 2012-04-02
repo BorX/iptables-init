@@ -29,5 +29,10 @@ enableTable_mangle() {
   modTable --policy INPUT       ACCEPT
   modTable --policy FORWARD     ACCEPT
   modTable --policy POSTROUTING ACCEPT
+# modTable --append PREROUTING  -p icmp --jump LOG --log-level 1 --log-prefix "'[DBUG MPREROUTING]  '"
+# modTable --append OUTPUT      -p icmp --jump LOG --log-level 1 --log-prefix "'[DBUG MOUTPUT]      '"
+# modTable --append INPUT       -p icmp --jump LOG --log-level 1 --log-prefix "'[DBUG MINPUT]       '"
+# modTable --append FORWARD     -p icmp --jump LOG --log-level 1 --log-prefix "'[DBUG MFORWARD]     '"
+# modTable --append POSTROUTING -p icmp --jump LOG --log-level 1 --log-prefix "'[DBUG MPOSTROUTING] '"
 }
 

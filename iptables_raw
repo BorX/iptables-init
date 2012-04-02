@@ -23,5 +23,8 @@ enableTable_raw() {
   # Policies for each chain of table raw
   modTable --policy PREROUTING  ACCEPT
   modTable --policy OUTPUT      ACCEPT
+
+# modTable --append PREROUTING  -p icmp --jump LOG --log-level 1 --log-prefix "'[DBUG RPREROUTING]  '"
+# modTable --append OUTPUT      -p icmp --jump LOG --log-level 1 --log-prefix "'[DBUG ROUTPUT]      '"
 }
 

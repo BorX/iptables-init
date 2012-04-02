@@ -38,6 +38,9 @@ enableTable_filter() {
   modTable --policy INPUT   DROP
   modTable --policy OUTPUT  DROP
   modTable --policy FORWARD DROP
+# modTable --append INPUT       -p icmp --jump LOG --log-level 1 --log-prefix "'[DBUG FINPUT]       '"
+# modTable --append OUTPUT      -p icmp --jump LOG --log-level 1 --log-prefix "'[DBUG FOUTPUT]      '"
+# modTable --append FORWARD     -p icmp --jump LOG --log-level 1 --log-prefix "'[DBUG FFORWARD]     '"
 
   # Decomposing chain INPUT by protocol
   modTable --new-chain TCP_INPUT

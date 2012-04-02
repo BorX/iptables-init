@@ -25,5 +25,8 @@ enableTable_nat() {
   modTable --policy PREROUTING  ACCEPT
   modTable --policy OUTPUT      ACCEPT
   modTable --policy POSTROUTING ACCEPT
+# modTable --append PREROUTING  -p icmp --jump LOG --log-level 1 --log-prefix "'[DBUG NPREROUTING]  '"
+# modTable --append OUTPUT      -p icmp --jump LOG --log-level 1 --log-prefix "'[DBUG NOUTPUT]      '"
+# modTable --append POSTROUTING -p icmp --jump LOG --log-level 1 --log-prefix "'[DBUG NPOSTROUTING] '"
 }
 
