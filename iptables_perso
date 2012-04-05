@@ -1,34 +1,78 @@
 #!/bin/bash
 
 persoFilter() {
-  # Autorisation acces SSH
-  addToChain TCP_INPUT_ALLOWED   RETURN --protocol tcp --source      trust1 --dport  22
-  addToChain TCP_OUTPUT_ALLOWED  RETURN --protocol tcp --destination trust1 --sport  22
 
-  addToChain TCP_INPUT_ALLOWED   RETURN --protocol tcp --source      trust2 --dport  22
-  addToChain TCP_OUTPUT_ALLOWED  RETURN --protocol tcp --destination trust2 --sport  22
+  ######################################################################
+  # Forward
 
-  # Autorisation DNS Numericable
-  addToChain UDP_INPUT_ALLOWED   RETURN --protocol udp --source      89.2.0.1 --sport 53
-  addToChain UDP_OUTPUT_ALLOWED  RETURN --protocol udp --destination 89.2.0.1 --dport 53
-  addToChain UDP_INPUT_ALLOWED   RETURN --protocol udp --source      89.2.0.2 --sport 53
-  addToChain UDP_OUTPUT_ALLOWED  RETURN --protocol udp --destination 89.2.0.2 --dport 53
+  # VM
+  addToChain FORWARD_ALLOWED RETURN --source      192.168.1/24
+  addToChain FORWARD_ALLOWED RETURN --destination 192.168.1/24
+  addToChain FORWARD_ALLOWED RETURN --source 0.0.0.0 --destination 255.255.255.255
 
-  # Autoriser les requetes Whois
-  addToChain TCP_OUTPUT_ALLOWED  RETURN --protocol tcp --dport  43
-  # Autoriser les requetes HTTP
-  addToChain TCP_OUTPUT_ALLOWED  RETURN --protocol tcp --dport  80
-  # Autoriser les requetes HTTPS
-  addToChain TCP_OUTPUT_ALLOWED  RETURN --protocol tcp --dport 443
 
-  # Autoriser les requetes HTTPS chez Google
-# addToChain TCP_OUTPUT_ALLOWED  RETURN --protocol tcp --destination 209.85.0.0/16  --dport 443
-  # Autoriser les connexions SSH chez GitHub
+  ######################################################################
+  # Inbound
+
+  # SSH
+  for client in trust1 trust2; do
+    addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --source      $client --dport    22
+    addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --destination $client --sport    22
+  done
+
+  # HTTP
+  addToChain TCP_INPUT_ALLOWED   RETURN --protocol tcp --source localhost --destination localhost --dport 80
+  addToChain TCP_OUTPUT_ALLOWED  RETURN --protocol tcp --source localhost --destination localhost --sport 80
+  for client in trust1 trust2 trust3 trust4 trust5; do
+    addToChain TCP_INPUT_ALLOWED   RETURN --protocol tcp --source      $client --dport 80
+    addToChain TCP_OUTPUT_ALLOWED  RETURN --protocol tcp --destination $client --sport 80
+  done
+  # addToChain TCP_INPUT_ALLOWED   RETURN --protocol tcp --dport 80
+  # addToChain TCP_OUTPUT_ALLOWED  RETURN --protocol tcp --sport 80
+
+  # Proxy APT
+  for client in trust1 trust2 trust3 trust4 trust5; do
+    addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --source      $client --dport 28419
+    addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --destination $client --sport 28419
+  done
+
+
+  ######################################################################
+  # Outbound
+
+  # SSH
+  for client in trust1 trust2 trust3 trust4 trust5; do
+    addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --destination $client --dport 22
+    addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --source      $client --sport 22
+  done
+
+  # GitHub
   addToChain TCP_OUTPUT_ALLOWED  RETURN --protocol tcp --destination 207.97.227.239 --dport  22
+  addToChain TCP_OUTPUT_ALLOWED  RETURN --protocol tcp --destination 207.97.227.239 --dport 443
 
-  # Suppression immediate des tentatives des Windows environnants (pour eviter pollution des logs)
-  addToChain UDP_INPUT_ALLOWED  DROP    --protocol udp --source trustWin --sport  68 --destination 255.255.255.255 --dport  67
-  addToChain UDP_INPUT_ALLOWED  DROP    --protocol udp --source trustWin --sport 137 --destination 192.168.22.255  --dport 137
-  addToChain UDP_INPUT_ALLOWED  DROP    --protocol udp --source trustWin --sport 138 --destination 192.168.22.255  --dport 138
+  # Whois
+  addToChain TCP_OUTPUT_ALLOWED  RETURN --protocol tcp  --dport  43
+  # HTTP
+  addToChain TCP_OUTPUT_ALLOWED  RETURN --protocol tcp  --dport  80
+  # HTTPS
+# addToChain TCP_OUTPUT_ALLOWED  RETURN --protocol tcp  --dport 443
+
+  # NTP
+  addToChain UDP_OUTPUT_ALLOWED  RETURN --protocol udp  --dport 123 --sport 123
+  addToChain UDP_INPUT_ALLOWED   RETURN --protocol udp  --dport 123 --sport 123
+
+
+  ######################################################################
+  # Miscellaneous
+
+  # DNS Free (French Internet Provider)
+  addToChain UDP_INPUT_ALLOWED   RETURN --protocol udp  --source      192.168.1.254 --sport 53
+  addToChain UDP_OUTPUT_ALLOWED  RETURN --protocol udp  --destination 192.168.1.254 --dport 53
+
+  addToChain UDP_INPUT_ALLOWED   RETURN --protocol udp  --source 0.0.0.0      --sport  68 --destination 255.255.255.255 --dport  67
+  # Immediate removal of attempts by Windows (to avoid pollution of logs)
+  addToChain UDP_INPUT_ALLOWED   DROP   --protocol udp  --source 192.168.1/24 --sport  68 --destination 255.255.255.255 --dport  67
+  addToChain UDP_INPUT_ALLOWED   DROP   --protocol udp  --source 192.168.1/24 --sport 137 --destination 192.168.1.255   --dport 137
+  addToChain UDP_INPUT_ALLOWED   DROP   --protocol udp  --source 192.168.1/24 --sport 138 --destination 192.168.1.255   --dport 138
 }
 
