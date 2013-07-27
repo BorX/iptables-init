@@ -83,6 +83,7 @@ enableTable_filter() {
   addToChain FORWARD GLOBAL_FORWARD
 
   # Personalization have priority on the rest
+  persoGlobalFilter
   persoFilter
 
   # Allow changes on ports > 1024

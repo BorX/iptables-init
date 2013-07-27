@@ -47,8 +47,8 @@ persoFilter() {
   done
 
   # GitHub
-  addToChain TCP_OUTPUT_ALLOWED  RETURN --protocol tcp --destination 207.97.227.239 --dport  22
-  addToChain TCP_OUTPUT_ALLOWED  RETURN --protocol tcp --destination 207.97.227.239 --dport 443
+  addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --destination 204.232.175.90 --dport  22
+  addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --destination 204.232.175.90 --dport 443
 
   # Whois
   addToChain TCP_OUTPUT_ALLOWED  RETURN --protocol tcp  --dport  43
@@ -58,21 +58,9 @@ persoFilter() {
 # addToChain TCP_OUTPUT_ALLOWED  RETURN --protocol tcp  --dport 443
 
   # NTP
-  addToChain UDP_OUTPUT_ALLOWED  RETURN --protocol udp  --dport 123 --sport 123
-  addToChain UDP_INPUT_ALLOWED   RETURN --protocol udp  --dport 123 --sport 123
-
-
-  ######################################################################
-  # Miscellaneous
-
-  # DNS Free (French Internet Provider)
-  addToChain UDP_INPUT_ALLOWED   RETURN --protocol udp  --source      192.168.1.254 --sport 53
-  addToChain UDP_OUTPUT_ALLOWED  RETURN --protocol udp  --destination 192.168.1.254 --dport 53
-
-  addToChain UDP_INPUT_ALLOWED   RETURN --protocol udp  --source 0.0.0.0      --sport  68 --destination 255.255.255.255 --dport  67
-  # Immediate removal of attempts by Windows (to avoid pollution of logs)
-  addToChain UDP_INPUT_ALLOWED   DROP   --protocol udp  --source 192.168.1/24 --sport  68 --destination 255.255.255.255 --dport  67
-  addToChain UDP_INPUT_ALLOWED   DROP   --protocol udp  --source 192.168.1/24 --sport 137 --destination 192.168.1.255   --dport 137
-  addToChain UDP_INPUT_ALLOWED   DROP   --protocol udp  --source 192.168.1/24 --sport 138 --destination 192.168.1.255   --dport 138
+  addToChain UDP_OUTPUT_ALLOWED RETURN --protocol udp --dport 123
+  addToChain UDP_OUTPUT_ALLOWED RETURN --protocol udp --sport 123
+  addToChain UDP_INPUT_ALLOWED  RETURN --protocol udp --dport 123
+  addToChain UDP_INPUT_ALLOWED  RETURN --protocol udp --sport 123
 }
 

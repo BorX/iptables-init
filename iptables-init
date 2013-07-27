@@ -42,6 +42,7 @@ SCRIPTNAME="$DIR_BIN/$NAME"
 # Function that starts the daemon/service
 #
 do_start() {
+  . "$DIR_BIN"/iptables_perso_global
   . "$DIR_BIN"/iptables_perso
   for table in filter mangle nat raw; do
     . "$DIR_BIN"/iptables_${table}
