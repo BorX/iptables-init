@@ -47,6 +47,7 @@ do_start() {
     . "$DIR_BIN"/iptables_${table}
     enableTable_${table}
   done
+  [ -r '/etc/init.d/fail2ban' ] && /usr/sbin/invoke-rc.d fail2ban status && /usr/sbin/invoke-rc.d fail2ban restart
 }
 
 #
@@ -57,6 +58,7 @@ do_stop() {
     . "$DIR_BIN"/iptables_${table}
     disableTable_${table}
   done
+  [ -r '/etc/init.d/fail2ban' ] && /usr/sbin/invoke-rc.d fail2ban status && /usr/sbin/invoke-rc.d fail2ban restart
 }
 
 case "$1" in
