@@ -1,0 +1,3 @@
+#!/bin/bash
+
+[ -r '/etc/init.d/fail2ban' ] && invoke-rc.d fail2ban status && invoke-rc.d fail2ban restart
