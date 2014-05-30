@@ -9,11 +9,11 @@ exec > /dev/null
  sysctl -w net.ipv4.icmp_ignore_bogus_error_responses=1
 
 # Autoriser le ping (0 = accepter ; 1 = refuser)
-[ "$FILTER_DROP_ICMP" == 'true' ] && {
+if [ "$FILTER_DROP_ICMP" == 'true' ]; then
  sysctl -w net.ipv4.icmp_echo_ignore_all=1
-} || {
+else
  sysctl -w net.ipv4.icmp_echo_ignore_all=0
-}
+fi
 
 # Surveillance de la taille de la fenetre TCP
  sysctl -w net.ipv4.tcp_window_scaling=1
