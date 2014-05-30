@@ -1,0 +1,13 @@
+#!/bin/bash
+
+[ -n "$IPTABLES_INIT_LIB" ] && source $IPTABLES_INIT_LIB || exit 1
+
+TABLE='raw'
+
+# Reinit of table
+modTable --flush
+modTable --delete-chain
+
+# Policies for each chain of table raw
+modTable --policy PREROUTING  ACCEPT
+modTable --policy OUTPUT      ACCEPT

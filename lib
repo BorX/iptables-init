@@ -1,6 +1,7 @@
 #!/bin/bash
 
 modTable() {
+  [ -n "$TABLE" ] || exit 1
   eval iptables -t $TABLE $*
 }
 
