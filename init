@@ -1,65 +1,31 @@
-#! /bin/bash
-### BEGIN INIT INFO
-# Provides:          iptables-init
-# Required-Start:    $remote_fs $syslog
-# Required-Stop:     $remote_fs $syslog
-# Default-Start:     2 3 4 5
-# Default-Stop:      0 1 6
-# Short-Description: Easy initialization iptables rules
-# Description:       Shell script to easily initialize iptables rules by incorporating recurrent security 
-### END INIT INFO
-
+#!/bin/bash
 # Author: Boris Klymko <boris.klymko@gmail.com>
 
-PATH=/sbin:/bin:/usr/bin
 DESC='initialization iptables rules'
 NAME="$(basename "$0")"
 DIR_BIN="$(cd "$(dirname "$0")" && pwd)"
-DIR_LIB="$DIR_BIN"
-SCRIPTNAME="$DIR_BIN/$NAME"
+DIR_MOD="$DIR_BIN"/iptables.d
 
 # Exit is not runned by root
 [ $(id -u) -eq 0 ] || exit 1
 
-# Load the VERBOSE setting and other rcS variables
-. /lib/init/vars.sh
+source /lib/init/vars.sh
+source /lib/lsb/init-functions
 
-# Define LSB log_* functions.
-# Depend on lsb-base (>= 3.2-14) to ensure that this file is present
-# and status_of_proc is working.
-. /lib/lsb/init-functions
+source "$DIR_BIN"/config
 
-# Options
-. "$DIR_BIN"/iptables-config
+export IPTABLES_INIT_LIB="$DIR_BIN"/lib
 
-# Functions
-. "$DIR_BIN"/iptables-lib
-
-# Kernel parameters (sysctl)
-"$DIR_BIN"/iptables-commands
-
-#
-# Function that starts the daemon/service
-#
 do_start() {
-  . "$DIR_BIN"/iptables_perso_global
-  . "$DIR_BIN"/iptables_perso
-  for table in filter mangle nat raw; do
-    . "$DIR_BIN"/iptables_${table}
-    enableTable_${table}
+  for module in "$DIR_MOD"/S*; do
+    source "$module"
   done
-  [ -r '/etc/init.d/fail2ban' ] && /usr/sbin/invoke-rc.d fail2ban status && /usr/sbin/invoke-rc.d fail2ban restart
 }
 
-#
-# Function that stops the daemon/service
-#
 do_stop() {
-  for table in filter mangle nat raw; do
-    . "$DIR_BIN"/iptables_${table}
-    disableTable_${table}
+  for module in "$DIR_MOD"/K*; do
+    source "$module"
   done
-  [ -r '/etc/init.d/fail2ban' ] && /usr/sbin/invoke-rc.d fail2ban status && /usr/sbin/invoke-rc.d fail2ban restart
 }
 
 case "$1" in
@@ -87,7 +53,7 @@ case "$1" in
     log_end_msg 0
     ;;
   *)
-    echo "Usage: $SCRIPTNAME {start|stop|status|restart|force-reload}" >&2
+    echo "Usage: $0 {start|stop|status|restart|force-reload}" >&2
     exit 3
     ;;
 esac
