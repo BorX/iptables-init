@@ -1,2 +1,9 @@
-FILTER_DROP_ICMP=false
-ANTI_FLOOD_ENABLED=true
+export FILTER_DROP_ICMP=false
+export ANTI_FLOOD_ENABLED=true
+
+export FORWARDING='192.168/16'
+export INBOUND_SSH_ALLOWED='trust1 trust2'
+export INBOUND_APT_ALLOWED='trust1 trust2 trust3 trust4'
+export INBOUND_PUPPET_ALLOWED='trust1 trust2 trust3 trust4'
+
+export OUTBOUND_SSH_ALLOWED='trust1 trust2'
