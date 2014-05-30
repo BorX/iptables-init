@@ -1,0 +1,16 @@
+#!/bin/bash
+
+[ -n "$IPTABLES_INIT_LIB" ] && source $IPTABLES_INIT_LIB || exit 1
+
+TABLE='filter'
+addToChain UDP_INPUT_ALLOWED DROP --protocol udp --source 192.168.22.254 --sport 138 --destination 192.168.22.255  --dport 138
+
+addToChain UDP_INPUT_ALLOWED  ACCEPT --protocol udp --source      192.168.22.254 --sport 53
+addToChain UDP_OUTPUT_ALLOWED ACCEPT --protocol udp --destination 192.168.22.254 --dport 53
+
+# A garder ?
+#	addToChain ICMP_OUTPUT_ALLOWED DROP --protocol icmp --destination 192.168.22.254
+
+addToChain UDP_INPUT_ALLOWED DROP --protocol udp --source 0.0.0.0        --sport  68 --destination 255.255.255.255 --dport  67
+#	addToChain UDP_INPUT_ALLOWED DROP --protocol udp --source 192.168.22/24  --sport  68 --destination 255.255.255.255 --dport  67
+addToChain UDP_INPUT_ALLOWED DROP --protocol udp --source 192.168.22.254 --sport 137 --destination 192.168.22.255  --dport 137
