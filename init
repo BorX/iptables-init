@@ -18,13 +18,13 @@ export IPTABLES_INIT_LIB="$DIR_BIN"/lib
 
 do_start() {
   for module in "$DIR_MOD"/S*; do
-    source "$module"
+    "$module"
   done
 }
 
 do_stop() {
   for module in "$DIR_MOD"/K*; do
-    source "$module"
+    "$module"
   done
 }
 
