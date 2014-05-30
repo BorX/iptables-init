@@ -216,7 +216,6 @@ modTable --new-chain FORWARD_ALLOWED ; addToChain FORWARD FORWARD_ALLOWED
 modTable --new-chain GLOBAL_FORWARD  ; addToChain FORWARD GLOBAL_FORWARD
 
 
-
 # Allow changes on ports > 1024
 addToChain TCP_INPUT_ALLOWED  RETURN --match state --state ESTABLISHED,RELATED --protocol tcp --dport 1024: # checked
 
@@ -224,13 +223,6 @@ addToChain TCP_INPUT_ALLOWED  RETURN --match state --state ESTABLISHED,RELATED -
 #     >> Allow DHCP request / response
 addToChain UDP_INPUT_ALLOWED  RETURN --protocol udp --source-port 67 --destination-port 68 # checked
 addToChain UDP_OUTPUT_ALLOWED RETURN --protocol udp --source-port 68 --destination-port 67 # checked
-
-# Frequent attacks defender
-checkTCPComplianceInputPackets
-antiScan
-icmpProtect
-dropSuspiciousPackets
-dropInvalidIP
 
   # Permettre à une connexion deja ouverte de recevoir du trafic
 # TODO Est-ce bien necessaire ? En ACCEPT ?
@@ -240,20 +232,13 @@ dropInvalidIP
 # addToChain GLOBAL_OUTPUT ACCEPT ! --destination 127.0.0.0/8
 
 
-  # All packets allowed must be returned. Others are dropped.
-  addToChain TCP_INPUT_ALLOWED   DROP          TCP_IN_REFUSED
-  addToChain UDP_INPUT_ALLOWED   DROP          UDP_IN_REFUSED
-  addToChain ICMP_INPUT_ALLOWED  DROP          ICMP_IN_REFUSED
+# Frequent attacks defender
+checkTCPComplianceInputPackets
+antiScan
+icmpProtect
+dropSuspiciousPackets
+dropInvalidIP
 
-  addToChain TCP_OUTPUT_ALLOWED  DROP          TCP_OUT_REFUSED
-  addToChain UDP_OUTPUT_ALLOWED  DROP          UDP_OUT_REFUSED
-  addToChain ICMP_OUTPUT_ALLOWED DROP          ICMP_OUT_REFUSED
-
-  addToChain FORWARD_ALLOWED     DROP          FORWARD_REFUSED
-
-  addToChain TCP_OUTPUT          GLOBAL_OUTPUT
-  addToChain UDP_OUTPUT          GLOBAL_OUTPUT
-  addToChain ICMP_OUTPUT         GLOBAL_OUTPUT
 
 if $ANTI_FLOOD_ENABLED; then
   # Accept established connection
@@ -276,10 +261,14 @@ if $ANTI_FLOOD_ENABLED; then
 # addToChain GLOBAL_OUTPUT  DROP OUTPUT_FLOOD
 # addToChain GLOBAL_FORWARD DROP FORWARD_FLOOD
 else
-  addToChain TCP_INPUT   GLOBAL_INPUT
-  addToChain UDP_INPUT   GLOBAL_INPUT
-  addToChain ICMP_INPUT  GLOBAL_INPUT
+  addToChain TCP_INPUT      GLOBAL_INPUT
+  addToChain UDP_INPUT      GLOBAL_INPUT
+  addToChain ICMP_INPUT     GLOBAL_INPUT
 fi
+
+  addToChain TCP_OUTPUT     GLOBAL_OUTPUT
+  addToChain UDP_OUTPUT     GLOBAL_OUTPUT
+  addToChain ICMP_OUTPUT    GLOBAL_OUTPUT
 
   addToChain GLOBAL_INPUT   ACCEPT
   addToChain GLOBAL_OUTPUT  ACCEPT
