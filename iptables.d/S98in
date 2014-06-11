@@ -4,6 +4,30 @@
 
 TABLE='filter'
 
+[ -n "$IN_HTTP_CLI_ALLOWED" ] && {
+	if [ "$IN_HTTP_CLI_ALLOWED" == 'all' ]; then
+		addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --dport 80
+		addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --sport 80
+	else
+		for client in $IN_HTTP_CLI_ALLOWED; do
+			addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --source      $client --dport 80
+			addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --destination $client --sport 80
+		done
+	fi
+}
+
+[ -n "$IN_HTTPS_CLI_ALLOWED" ] && {
+	if [ "$IN_HTTPS_CLI_ALLOWED" == 'all' ]; then
+		addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --dport 443
+		addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --sport 443
+	else
+		for client in $IN_HTTPS_CLI_ALLOWED; do
+			addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --source      $client --dport 443
+			addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --destination $client --sport 443
+		done
+	fi
+}
+
 [ -n "$IN_SSH_CLI_ALLOWED" ] && {
 	if [ "$IN_SSH_CLI_ALLOWED" == 'all' ]; then
 		addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --dport 22
@@ -36,30 +60,6 @@ TABLE='filter'
 		for client in $IN_PUPPET_CLI_ALLOWED; do
 			addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --source      $client --dport 8140
 			addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --destination $client --sport 8140
-		done
-	fi
-}
-
-[ -n "$IN_HTTP_CLI_ALLOWED" ] && {
-	if [ "$IN_HTTP_CLI_ALLOWED" == 'all' ]; then
-		addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --dport 80
-		addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --sport 80
-	else
-		for client in $IN_HTTP_CLI_ALLOWED; do
-			addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --source      $client --dport 80
-			addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --destination $client --sport 80
-		done
-	fi
-}
-
-[ -n "$IN_HTTPS_CLI_ALLOWED" ] && {
-	if [ "$IN_HTTPS_CLI_ALLOWED" == 'all' ]; then
-		addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --dport 443
-		addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --sport 443
-	else
-		for client in $IN_HTTPS_CLI_ALLOWED; do
-			addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --source      $client --dport 443
-			addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --destination $client --sport 443
 		done
 	fi
 }

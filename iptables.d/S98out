@@ -4,6 +4,31 @@
 
 TABLE='filter'
 
+[ -n "$OUT_HTTP_SRV_ALLOWED" ] && {
+	if [ "$OUT_HTTP_SRV_ALLOWED" == 'all' ]; then
+		addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --dport 80
+	else
+		for server in $OUT_HTTP_SRV_ALLOWED; do
+			addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --destination $server --dport 80
+		done
+	fi
+}
+
+[ -n "$OUT_HTTPS_SRV_ALLOWED" ] && {
+	if [ "$OUT_HTTPS_SRV_ALLOWED" == 'all' ]; then
+		addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --dport 443
+	else
+		for server in $OUT_HTTPS_SRV_ALLOWED; do
+			addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --destination $server --dport 443
+		done
+	fi
+}
+
+[ "$OUT_GITHUB" == 'true' ] && {
+	addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --destination 192.30.252/24 --dport  22
+	addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --destination 192.30.252/24 --dport 443
+}
+
 [ "$OUT_WHOIS" == 'true' ] && {
 	addToChain TCP_OUTPUT_ALLOWED  RETURN --protocol tcp  --dport  43
 }
@@ -42,29 +67,4 @@ TABLE='filter'
 			addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --source      $server --sport 8140
 		done
 	fi
-}
-
-[ -n "$OUT_HTTP_SRV_ALLOWED" ] && {
-	if [ "$OUT_HTTP_SRV_ALLOWED" == 'all' ]; then
-		addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --dport 80
-	else
-		for server in $OUT_HTTP_SRV_ALLOWED; do
-			addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --destination $server --dport 80
-		done
-	fi
-}
-
-[ -n "$OUT_HTTPS_SRV_ALLOWED" ] && {
-	if [ "$OUT_HTTPS_SRV_ALLOWED" == 'all' ]; then
-		addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --dport 443
-	else
-		for server in $OUT_HTTPS_SRV_ALLOWED; do
-			addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --destination $server --dport 443
-		done
-	fi
-}
-
-[ "$OUT_GITHUB" == 'true' ] && {
-	addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --destination 192.30.252/24 --dport  22
-	addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --destination 192.30.252/24 --dport 443
 }
