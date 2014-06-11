@@ -1,9 +1,0 @@
-#!/bin/bash
-
-[ -n "$IPTABLES_INIT_LIB" ] && source $IPTABLES_INIT_LIB || exit 1
-
-TABLE='filter'
-addToChain UDP_OUTPUT_ALLOWED RETURN --protocol udp --dport 123
-addToChain UDP_OUTPUT_ALLOWED RETURN --protocol udp --sport 123
-addToChain UDP_INPUT_ALLOWED  RETURN --protocol udp --dport 123
-addToChain UDP_INPUT_ALLOWED  RETURN --protocol udp --sport 123

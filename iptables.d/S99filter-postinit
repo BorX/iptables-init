@@ -4,6 +4,14 @@
 
 TABLE='filter'
 
+# Allow changes on ports > 1024
+addToChain TCP_INPUT_ALLOWED  RETURN --match state --state ESTABLISHED,RELATED --protocol tcp --dport 1024: # checked
+
+# Allow client to create broadcast and multicast request
+#     >> Allow DHCP request / response
+addToChain UDP_INPUT_ALLOWED  RETURN --protocol udp --source-port 67 --destination-port 68 # checked
+addToChain UDP_OUTPUT_ALLOWED RETURN --protocol udp --source-port 68 --destination-port 67 # checked
+
 # All packets allowed must be returned. Others are dropped.
 addToChain TCP_INPUT_ALLOWED   DROP TCP_IN_REFUSED
 addToChain UDP_INPUT_ALLOWED   DROP UDP_IN_REFUSED
