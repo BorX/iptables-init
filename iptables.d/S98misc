@@ -4,12 +4,6 @@
 
 TABLE='filter'
 
-# ntp
-addToChain UDP_OUTPUT_ALLOWED RETURN --protocol udp --dport 123
-addToChain UDP_OUTPUT_ALLOWED RETURN --protocol udp --sport 123
-addToChain UDP_INPUT_ALLOWED  RETURN --protocol udp --dport 123
-addToChain UDP_INPUT_ALLOWED  RETURN --protocol udp --sport 123
-
 # A garder ?
 #addToChain ICMP_OUTPUT_ALLOWED DROP --protocol icmp --destination 192.168.22.254
 
