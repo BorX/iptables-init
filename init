@@ -12,8 +12,7 @@ DIR_MOD="$DIR_BIN"/iptables.d
 source /lib/init/vars.sh
 source /lib/lsb/init-functions
 
-source "$DIR_BIN"/config
-
+export IPTABLES_INIT_CNF="$DIR_BIN"/config
 export IPTABLES_INIT_LIB="$DIR_BIN"/lib
 
 do_start() {
