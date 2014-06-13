@@ -7,9 +7,11 @@ TABLE='filter'
 [ -n "$OUT_HTTP_SRV_ALLOWED" ] && {
 	if [ "$OUT_HTTP_SRV_ALLOWED" == 'all' ]; then
 		addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --dport 80
+		addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --sport 80 --match state --state ESTABLISHED,RELATED --dport 1024:
 	else
 		for server in $OUT_HTTP_SRV_ALLOWED; do
 			addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --destination $server --dport 80
+			addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --source      $server --sport 80 --match state --state ESTABLISHED,RELATED --dport 1024:
 		done
 	fi
 }
@@ -17,30 +19,35 @@ TABLE='filter'
 [ -n "$OUT_HTTPS_SRV_ALLOWED" ] && {
 	if [ "$OUT_HTTPS_SRV_ALLOWED" == 'all' ]; then
 		addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --dport 443
+		addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --sport 443 --match state --state ESTABLISHED,RELATED --dport 1024:
 	else
 		for server in $OUT_HTTPS_SRV_ALLOWED; do
 			addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --destination $server --dport 443
+			addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --source      $server --sport 443 --match state --state ESTABLISHED,RELATED --dport 1024:
 		done
 	fi
 }
 
 [ "$OUT_GITHUB" == 'true' ] && {
 	addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --destination 192.30.252/24 --dport  22
+	addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --source      192.30.252/24 --sport  22 --match state --state ESTABLISHED,RELATED --dport 1024:
 	addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --destination 192.30.252/24 --dport 443
+	addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --source      192.30.252/24 --sport 443 --match state --state ESTABLISHED,RELATED --dport 1024:
 }
 
 [ "$OUT_WHOIS" == 'true' ] && {
-	addToChain TCP_OUTPUT_ALLOWED  RETURN --protocol tcp  --dport  43
+	addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp  --dport 43
+	addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp  --sport 43 --match state --state ESTABLISHED,RELATED --dport 1024:
 }
 
 [ -n "$OUT_SSH_SRV_ALLOWED" ] && {
 	if [ "$OUT_SSH_SRV_ALLOWED" == 'all' ]; then
 		addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --dport 22
-		addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --sport 22
+		addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --sport 22 --match state --state ESTABLISHED,RELATED --dport 1024:
 	else
 		for server in $OUT_SSH_SRV_ALLOWED; do
 			addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --destination $server --dport 22
-			addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --source      $server --sport 22
+			addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --source      $server --sport 22 --match state --state ESTABLISHED,RELATED --dport 1024:
 		done
 	fi
 }
@@ -48,11 +55,11 @@ TABLE='filter'
 [ -n "$OUT_APT_SRV_ALLOWED" ] && {
 	if [ "$OUT_APT_SRV_ALLOWED" == 'all' ]; then
 		addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --dport 3142
-		addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --sport 3142
+		addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --sport 3142 --match state --state ESTABLISHED,RELATED --dport 1024:
 	else
 		for server in $OUT_APT_SRV_ALLOWED; do
 			addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --destination $server --dport 3142
-			addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --source      $server --sport 3142
+			addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --source      $server --sport 3142 --match state --state ESTABLISHED,RELATED --dport 1024:
 		done
 	fi
 }
@@ -60,11 +67,11 @@ TABLE='filter'
 [ -n "$OUT_PUPPET_SRV_ALLOWED" ] && {
 	if [ "$OUT_PUPPET_SRV_ALLOWED" == 'all' ]; then
 		addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --dport 8140
-		addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --sport 8140
+		addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --sport 8140 --match state --state ESTABLISHED,RELATED --dport 1024:
 	else
 		for server in $OUT_PUPPET_SRV_ALLOWED; do
 			addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --destination $server --dport 8140
-			addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --source      $server --sport 8140
+			addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --source      $server --sport 8140 --match state --state ESTABLISHED,RELATED --dport 1024:
 		done
 	fi
 }
