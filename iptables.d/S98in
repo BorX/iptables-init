@@ -4,62 +4,25 @@
 
 TABLE='filter'
 
-[ -n "$IN_HTTP_CLI_ALLOWED" ] && {
-	if [ "$IN_HTTP_CLI_ALLOWED" == 'all' ]; then
-		addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --dport 80
-		addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --sport 80
-	else
-		for client in $IN_HTTP_CLI_ALLOWED; do
-			addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --source      $client --dport 80
-			addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --destination $client --sport 80
-		done
-	fi
+openInStreams() {
+	local port="$1"
+	shift
+	local clients="$@"
+	[ -n "$clients" ] && {
+		if [ "$clients" == 'all' ]; then
+			addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --dport $port
+			addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --sport $port
+		else
+			for client in $clients; do
+				addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --source      $client --dport $port
+				addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --destination $client --sport $port
+			done
+		fi
+	}
 }
 
-[ -n "$IN_HTTPS_CLI_ALLOWED" ] && {
-	if [ "$IN_HTTPS_CLI_ALLOWED" == 'all' ]; then
-		addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --dport 443
-		addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --sport 443
-	else
-		for client in $IN_HTTPS_CLI_ALLOWED; do
-			addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --source      $client --dport 443
-			addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --destination $client --sport 443
-		done
-	fi
-}
-
-[ -n "$IN_SSH_CLI_ALLOWED" ] && {
-	if [ "$IN_SSH_CLI_ALLOWED" == 'all' ]; then
-		addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --dport 22
-		addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --sport 22
-	else
-		for client in $IN_SSH_CLI_ALLOWED; do
-			addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --source      $client --dport 22
-			addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --destination $client --sport 22
-		done
-	fi
-}
-
-[ -n "$IN_APT_CLI_ALLOWED" ] && {
-	if [ "$IN_APT_CLI_ALLOWED" == 'all' ]; then
-		addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --dport 3142
-		addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --sport 3142
-	else
-		for client in $IN_APT_CLI_ALLOWED; do
-			addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --source      $client --dport 3142
-			addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --destination $client --sport 3142
-		done
-	fi
-}
-
-[ -n "$IN_PUPPET_CLI_ALLOWED" ] && {
-	if [ "$IN_PUPPET_CLI_ALLOWED" == 'all' ]; then
-		addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --dport 8140
-		addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --sport 8140
-	else
-		for client in $IN_PUPPET_CLI_ALLOWED; do
-			addToChain TCP_INPUT_ALLOWED  RETURN --protocol tcp --source      $client --dport 8140
-			addToChain TCP_OUTPUT_ALLOWED RETURN --protocol tcp --destination $client --sport 8140
-		done
-	fi
-}
+openInStreams   80 $IN_HTTP_CLI_ALLOWED
+openInStreams  443 $IN_HTTPS_CLI_ALLOWED
+openInStreams   22 $IN_SSH_CLI_ALLOWED
+openInStreams 3142 $IN_APT_CLI_ALLOWED
+openInStreams 8140 $IN_PUPPET_CLI_ALLOWED
