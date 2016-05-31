@@ -7,6 +7,10 @@ Simplification
 --------------
 Compared to [v2](https://github.com/BorX/iptables-init/tree/v2.1), too generic, this version is oriented for staying simple.
 
+ipset
+-----
+[ipset](http://ipset.netfilter.org/) is used to manage sets of IPs (blacklisted, allowed on SSH port, ICMP, ...).
+
 IPv6 management
 ---------------
 All is closed.
@@ -16,10 +20,6 @@ Blacklists management
 Inspired by [trick77/ipset-blacklist](https://github.com/trick77/ipset-blacklist).  
 The blacklist is refreshed from sets of blacklists downloaded from the internet.  
 Instead of 1 blacklisted IP = 1 rule, all blacklisted IPs are referenced in one set managed by ipset.
-
-ipset
------
-ipset is used to manage sets of IPs (blacklisted, allowed on SSH port, ICMP, ...).
 
 Logging
 -------
