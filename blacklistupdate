@@ -1,0 +1,22 @@
+#!/bin/bash
+
+BLACKLIST="$(cd "$(dirname "$0")"; pwd)/blacklist"
+
+TMP_FILE="$(mktemp)"
+
+{
+	grep '" [45][0-9][0-9] ' /data/wordpress/logs/access.log | cut -d'-' -f1 | sort | uniq -c | awk '$1>100  {print $2}'
+	grep '/xmlrpc.php'       /data/wordpress/logs/access.log | cut -d'-' -f1 | sort | uniq -c | awk '$1>1000 {print $2}'
+	sed 's/#.*//g;/^$/d' "$BLACKLIST"
+}	| sort -u >"$TMP_FILE"
+
+cp -a "$BLACKLIST" "${BLACKLIST}_$(date +%y%m%d-%H%M)"
+>"$BLACKLIST"
+
+while read ip; do
+	echo $ip
+	whois $ip | egrep -i '^(orgname|address|city|person|country)' | sed 's/\(.*\)/# \1/'
+done <"$TMP_FILE" >>"$BLACKLIST"
+
+rm "$TMP_FILE"
+
