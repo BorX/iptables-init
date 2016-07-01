@@ -1,3 +1,51 @@
+104.223.253.156
+# OrgName:        Global Frag Networks
+# Address:        900 N. Alameda Street.
+# City:           Los Angeles
+# Country:        US
+104.236.103.52
+# OrgName:        Digital Ocean, Inc.
+# Address:        101 Ave of the Americas
+# Address:        10th Floor
+# City:           New York
+# Country:        US
+104.236.230.162
+# OrgName:        Digital Ocean, Inc.
+# Address:        101 Ave of the Americas
+# Address:        10th Floor
+# City:           New York
+# Country:        US
+109.252.1.54
+# country:        RU
+# address:        USPD MGTS
+# address:        Moscow, Russia
+# address:        Khachaturyana 5
+128.199.209.78
+# OrgName:        RIPE Network Coordination Centre
+# Address:        P.O. Box 10096
+# City:           Amsterdam
+# Country:        NL
+# country:        SG
+# address:        101 Ave of the Americas
+# address:        New York
+# address:        10013
+# address:        UNITED STATES
+# person:         Ben Uretsky
+# address:        101 Ave of the Americas, 10th Floor
+# address:        New York, NY 10013
+128.199.230.229
+# OrgName:        RIPE Network Coordination Centre
+# Address:        P.O. Box 10096
+# City:           Amsterdam
+# Country:        NL
+# country:        SG
+# address:        101 Ave of the Americas
+# address:        New York
+# address:        10013
+# address:        UNITED STATES
+# person:         Ben Uretsky
+# address:        101 Ave of the Americas, 10th Floor
+# address:        New York, NY 10013
 139.162.153.245
 # OrgName:        RIPE Network Coordination Centre
 # Address:        P.O. Box 10096
@@ -9,6 +57,20 @@
 # address:        329 E. Jimmie Leeds Road, Suite A, Galloway, NJ 08205, USA
 # person:         Thomas Asaro
 # address:        329 E. Jimmie Leeds Road, Suite A, Galloway, NJ 08205, USA
+144.76.41.116
+# OrgName:        RIPE Network Coordination Centre
+# Address:        P.O. Box 10096
+# City:           Amsterdam
+# Country:        NL
+# country:        DE
+# address:        Hetzner Online GmbH
+# address:        Industriestrasse 25
+# address:        D-91710 Gunzenhausen
+# address:        Germany
+# address:        Industriestrasse 25
+# address:        D-91710
+# address:        Gunzenhausen
+# address:        GERMANY
 144.76.51.46
 # OrgName:        RIPE Network Coordination Centre
 # Address:        P.O. Box 10096
@@ -23,6 +85,15 @@
 # address:        D-91710
 # address:        Gunzenhausen
 # address:        GERMANY
+151.80.242.201
+# country:        FR
+# address:        901 chemin de Clavel
+# address:        82200 MOISSAC
+# address:        FR
+# address:        OVH SAS
+# address:        2 rue Kellermann
+# address:        59100 Roubaix
+# address:        France
 158.69.194.154
 # OrgName:        OVH Hosting, Inc.
 # Address:        800-1801 McGill College
@@ -101,6 +172,12 @@
 # address:        Macao
 # address:        Macao
 # country:        MO
+172.245.10.116
+# OrgName:        ColoCrossing
+# Address:        325 Delaware Avenue
+# Address:        Suite 300
+# City:           Buffalo
+# Country:        US
 178.210.29.216
 # country:        RU
 # person:         Alexey V. Morar
@@ -125,6 +202,13 @@
 # address:     Krylatskie Holmi str., 35/4 app 713, 35/4, 713
 # address:     121614 - Moscow - 
 # country:     RU
+180.167.77.58
+# country:        CN
+# address:        No.31 ,jingrong street,beijing
+# address:        100032
+# person:         Weng Wen Qian
+# address:        Room 2405,357 Songlin Road,Shanghai 200122
+# country:        CN
 181.214.92.103
 # address:     Lee Street, 132, 
 # address:     32903 - Indialantic - FL
@@ -211,19 +295,15 @@
 # address:        Yaroslavskoe shosse, 123
 # address:        Moscow, Russia
 185.130.4.0/24
-# country:        DM
-# address:        C&H Towers, Corner of Great Marlborough and Great George Streets Roseau, 00152
-# person:         ANTONIO JORDAN
-# address:        Commonwealth of Dominica
-# address:        3rd Floor, C&H Towers, Comer of Great Marlborough and Great George Streets
-# address:        Roseau, 00152
+# country:        CY
+# address:        123317 .Moscow ,Antonova-Ovseenko Street, 9,
+# person:         Evgen Alesnarovich
+# address:        123317 - Moscow - Antonova-Ovseenko Street, 9,
 185.130.4.197
-# country:        DM
-# address:        C&H Towers, Corner of Great Marlborough and Great George Streets Roseau, 00152
-# person:         ANTONIO JORDAN
-# address:        Commonwealth of Dominica
-# address:        3rd Floor, C&H Towers, Comer of Great Marlborough and Great George Streets
-# address:        Roseau, 00152
+# country:        CY
+# address:        123317 .Moscow ,Antonova-Ovseenko Street, 9,
+# person:         Evgen Alesnarovich
+# address:        123317 - Moscow - Antonova-Ovseenko Street, 9,
 185.130.5.0/24
 # country:        DM
 # address:        USA 9420 MEADOWMONT VIEW DR,CHARLOTTE, NC.28269
@@ -282,11 +362,120 @@
 # address:        DIGITAL CABLE SYSTEMS SA
 # address:        Conect Business Center, B-dul Dimitrie Pompei nr. 10A
 # address:        Bucuresti, 020337, Romania
+188.42.255.244
+# country:        SG
+# person:         ROOT IP Manager
+# address:        3, op der Poukewiss
+# address:        7795 Roost
+# address:        Luxembourg
+191.96.249.20
+# address:     Francis Rachel Street, , Suite 1, Second Floor
+# address:      - Victoria - 
+# country:     SC
+# person:      CRS P
+# address:     Suite 4 Second Floor, , 
+# address:      - Victoria - 
+# country:     SC
 192.99.144.140
 # OrgName:        OVH Hosting, Inc.
 # Address:        800-1801 McGill College
 # City:           Montreal
 # Country:        CA
+193.19.118.201
+# country:        RU
+# address:        Moscow, Novozavodskaya str. 15, 2, 1V
+# person:         Strekozov Oleg Vladimirovich
+# address:        Russia, 107031, Moscow, proezd Dmitrosvkiy 8
+193.19.118.226
+# country:        RU
+# address:        Moscow, Novozavodskaya str. 15, 2, 1V
+# person:         Strekozov Oleg Vladimirovich
+# address:        Russia, 107031, Moscow, proezd Dmitrosvkiy 8
+193.19.119.190
+# country:        RU
+# address:        Moscow, Novozavodskaya str. 15, 2, 1V
+# person:         Strekozov Oleg Vladimirovich
+# address:        Russia, 107031, Moscow, proezd Dmitrosvkiy 8
+195.2.252.14
+# country:        RU
+# address:        Russia, 107031, Moscow, proezd Dmitrovskiy 8
+# person:         Strekozov Oleg Vladimirovich
+# address:        Russia, 107031, Moscow, proezd Dmitrosvkiy 8
+195.2.252.16
+# country:        RU
+# address:        Russia, 107031, Moscow, proezd Dmitrovskiy 8
+# person:         Strekozov Oleg Vladimirovich
+# address:        Russia, 107031, Moscow, proezd Dmitrosvkiy 8
+195.2.252.223
+# country:        RU
+# address:        Russia, 107031, Moscow, proezd Dmitrovskiy 8
+# person:         Strekozov Oleg Vladimirovich
+# address:        Russia, 107031, Moscow, proezd Dmitrosvkiy 8
+195.2.252.67
+# country:        RU
+# address:        Russia, 107031, Moscow, proezd Dmitrovskiy 8
+# person:         Strekozov Oleg Vladimirovich
+# address:        Russia, 107031, Moscow, proezd Dmitrosvkiy 8
+195.62.52.15
+# country:        RU
+# address:        Moscow, Novozavodskaya str. 15, 2, 1V
+# person:         Strekozov Oleg Vladimirovich
+# address:        Russia, 107031, Moscow, proezd Dmitrosvkiy 8
+195.62.52.177
+# country:        RU
+# address:        Moscow, Novozavodskaya str. 15, 2, 1V
+# person:         Strekozov Oleg Vladimirovich
+# address:        Russia, 107031, Moscow, proezd Dmitrosvkiy 8
+195.62.52.182
+# country:        RU
+# address:        Moscow, Novozavodskaya str. 15, 2, 1V
+# person:         Strekozov Oleg Vladimirovich
+# address:        Russia, 107031, Moscow, proezd Dmitrosvkiy 8
+195.62.52.206
+# country:        RU
+# address:        Moscow, Novozavodskaya str. 15, 2, 1V
+# person:         Strekozov Oleg Vladimirovich
+# address:        Russia, 107031, Moscow, proezd Dmitrosvkiy 8
+195.62.52.94
+# country:        RU
+# address:        Moscow, Novozavodskaya str. 15, 2, 1V
+# person:         Strekozov Oleg Vladimirovich
+# address:        Russia, 107031, Moscow, proezd Dmitrosvkiy 8
+195.62.53.134
+# country:        RU
+# address:        Moscow, Novozavodskaya str. 15, 2, 1V
+# person:         Strekozov Oleg Vladimirovich
+# address:        Russia, 107031, Moscow, proezd Dmitrosvkiy 8
+195.62.53.138
+# country:        RU
+# address:        Moscow, Novozavodskaya str. 15, 2, 1V
+# person:         Strekozov Oleg Vladimirovich
+# address:        Russia, 107031, Moscow, proezd Dmitrosvkiy 8
+195.62.53.253
+# country:        RU
+# address:        Moscow, Novozavodskaya str. 15, 2, 1V
+# person:         Strekozov Oleg Vladimirovich
+# address:        Russia, 107031, Moscow, proezd Dmitrosvkiy 8
+195.62.53.9
+# country:        RU
+# address:        Moscow, Novozavodskaya str. 15, 2, 1V
+# person:         Strekozov Oleg Vladimirovich
+# address:        Russia, 107031, Moscow, proezd Dmitrosvkiy 8
+195.88.208.0/24
+# country:        RU
+# address:        127473, Moscow, 2 Schemilovskiy per., d.5/4., str.1
+# person:         Strekozov Oleg Vladimirovich
+# address:        Russia, 107031, Moscow, proezd Dmitrosvkiy 8
+195.88.208.130
+# country:        RU
+# address:        127473, Moscow, 2 Schemilovskiy per., d.5/4., str.1
+# person:         Strekozov Oleg Vladimirovich
+# address:        Russia, 107031, Moscow, proezd Dmitrosvkiy 8
+195.88.209.159
+# country:        RU
+# address:        127473, Moscow, 2 Schemilovskiy per., d.5/4., str.1
+# person:         Strekozov Oleg Vladimirovich
+# address:        Russia, 107031, Moscow, proezd Dmitrosvkiy 8
 198.12.153.239
 # OrgName:        GoDaddy.com, LLC
 # Address:        14455 N Hayden Road
@@ -355,6 +544,12 @@
 # address:        INT'L TOWER 707-713 NATHAN RD
 # address:        MONGKOK KLN
 # country:        HK
+45.55.224.11
+# OrgName:        Digital Ocean, Inc.
+# Address:        101 Ave of the Americas
+# Address:        10th Floor
+# City:           New York
+# Country:        US
 45.55.65.153
 # OrgName:        Digital Ocean, Inc.
 # Address:        101 Ave of the Americas
@@ -402,12 +597,30 @@
 # Address:        1600 Amphitheatre Parkway
 # City:           Mountain View
 # Country:        US
+66.249.66.148
+# OrgName:        Google Inc.
+# Address:        1600 Amphitheatre Parkway
+# City:           Mountain View
+# Country:        US
 72.46.133.242
 # OrgName:        Versaweb, LLC
 # Address:        1110 Palms Airport Dr
 # Address:        Suite 110
 # City:           Las Vegas
 # Country:        US
+74.82.47.4
+# OrgName:        Hurricane Electric, Inc.
+# Address:        760 Mission Court
+# City:           Fremont
+# Country:        US
+85.207.155.247
+# country:        CZ
+# person:         Josef Skoda
+# address:        Upicka 460
+# address:        54233 Rtyne v Podkrkonosi
+# person:         Martin Mlcek
+# address:        Upicka 460
+# address:        54233 Rtyne v Podkrkonosi
 85.214.231.207
 # country:        DE
 # address:        Pascalstrasse 10
@@ -426,6 +639,16 @@
 # address:        Suite 1, Second Floor
 # address:        Sound & Vision House, Francis Rachel Street
 # address:        Victoria, Mahe, SEYCHELLES
+89.34.97.206
+# country:        GB
+# address:        Elm House, 10 Fountain Court
+# address:        BS32 4LA
+# address:        Bristol
+# address:        UNITED KINGDOM
+# person:         Zare NOC
+# address:        C/O Blenheim, Elm House, 10 Fountain Court
+# address:        BS32 4LA
+# address:        Bristol
 90.5.97.242
 # country:        FR
 # address:        FRANCE TELECOM/SCR
@@ -443,11 +666,88 @@
 # address:        2 rue Kellermann
 # address:        59100 Roubaix
 # address:        France
-195.62.52.177
-104.236.230.162
-89.34.97.206
-45.55.224.11
-195.88.208.130
-191.96.249.20
-109.252.1.54
-193.19.118.226
+91.224.161.39
+# country:        NL
+# address:        3A Little Denmark Complex, 147 Main Street, PO Box 4473, Road Town, Torola, British Virgin Islands VG1110
+# person:         Agnes Jouaneau
+# address:        A Little Denmark Complex, 147 Main Street, PO Box 4473
+# address:        Road Town, Torola, VG1110
+# address:        British Virgin Islands
+95.213.237.153
+62.214.90.107
+185.143.173.207
+185.143.173.208
+185.143.173.110
+185.143.173.134
+185.143.173.118
+195.88.209.239
+46.166.186.236
+195.88.209.35
+50.7.124.234
+195.2.253.67
+195.62.53.106
+95.213.235.52
+95.213.251.104
+195.2.253.141
+195.88.209.168
+195.62.52.110
+95.213.236.166
+95.213.237.210
+195.62.52.233
+195.62.52.109
+195.2.253.60
+46.108.26.124
+63.251.225.206
+107.170.112.47
+162.243.73.135
+63.251.225.207
+52.172.157.148
+107.170.195.99
+104.236.7.133
+195.62.53.94
+95.213.252.155
+185.143.172.71
+185.143.172.100
+185.143.172.193
+92.242.40.134
+78.155.217.132
+185.11.146.59
+46.101.238.216
+185.143.173.169
+185.143.173.239
+78.155.217.124
+185.143.173.177
+107.21.192.14
+92.242.40.156
+78.155.217.55
+185.143.173.146
+185.143.173.5
+164.132.192.238
+92.242.40.165
+92.242.40.92
+185.143.173.132
+78.155.217.223
+78.155.217.226
+52.208.146.127
+66.23.239.30
+195.2.252.29
+195.88.209.22
+195.62.52.159
+59.124.120.69
+195.62.52.137
+139.59.3.90
+50.7.143.68
+195.2.252.194
+164.132.224.24
+40.114.235.15
+91.214.114.97
+195.2.253.92
+188.166.177.2
+185.127.25.192
+178.17.170.215
+198.211.100.103
+45.55.52.178
+45.55.33.94
+45.55.50.242
+188.68.58.184
+185.142.237.8
