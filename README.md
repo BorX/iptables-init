@@ -30,6 +30,77 @@ ToDo
 ----
 No need to adapt script (use of config file or use of ipset)
 
+Example of result
+-----------------
+```
+# iptables -nvL
+Chain INPUT (policy DROP 140 packets, 11232 bytes)
+ pkts bytes target     prot opt in     out     source               destination
+    1    40 DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* BlackList    */ match-set blacklist src,dst
+    0     0 DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* No multicast */ PKTTYPE = multicast
+    0     0 DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* No broadcast */ PKTTYPE = broadcast
+ 2324  323K TCP_IN     tcp  --  eth0   *       0.0.0.0/0            0.0.0.0/0            /* Split TCP    */
+  100 11306 UDP_IN     udp  --  eth0   *       0.0.0.0/0            0.0.0.0/0            /* Split UDP    */
+  240  7680 ACCEPT     icmp --  eth0   *       0.0.0.0/0            0.0.0.0/0            /* ICMP         */ match-set icmp src
+    0     0 DROP       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            /* NO_LOG_POLLUTION:Port  21 */ tcp dpt:21
+    4   172 DROP       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            /* NO_LOG_POLLUTION:Port  23 */ tcp dpt:23
+    6   240 DROP       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            /* NO_LOG_POLLUTION:Port  80 */ tcp dpt:80
+    6   264 DROP       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            /* NO_LOG_POLLUTION:Port 443 */ tcp dpt:443
+  140 11232 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* Logs                      */ LOG flags 0 level 4 prefix " [INPUT DROPPED] "
+
+Chain FORWARD (policy DROP 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination
+    0     0 DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* BlackList    */ match-set blacklist src,dst
+    0     0 DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* No multicast */ PKTTYPE = multicast
+    0     0 DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* No broadcast */ PKTTYPE = broadcast
+    0     0 DROP       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            /* Scans Xmas and Null */ tcp flags:0x06/0x06
+    0     0 DROP       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            /* Scans Xmas and Null */ tcp flags:0x3F/0x00
+    0     0 DROP       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            /* Scans Xmas and Null */ tcp flags:0x3F/0x3F
+    0     0 DROP       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            /* Scans Xmas and Null */ tcp flags:0x29/0x29
+
+Chain OUTPUT (policy DROP 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination
+    0     0 DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* BlackList    */ match-set blacklist src,dst
+ 2014  231K TCP_OUT    tcp  --  *      eth0    0.0.0.0/0            0.0.0.0/0            /* Split TCP    */
+   17  1138 UDP_OUT    udp  --  *      eth0    0.0.0.0/0            0.0.0.0/0            /* Split UDP    */
+  240  7680 ACCEPT     icmp --  *      eth0    0.0.0.0/0            0.0.0.0/0            /* ICMP         */ match-set icmp dst
+    0     0 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* Logs         */ LOG flags 0 level 4 prefix "[OUTPUT DROPPED] "
+
+Chain TCP_IN (1 references)
+ pkts bytes target     prot opt in     out     source               destination
+    0     0 DROP       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            /* Scans Xmas and Null */ tcp flags:0x06/0x06
+    0     0 DROP       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            /* Scans Xmas and Null */ tcp flags:0x3F/0x00
+    0     0 DROP       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            /* Scans Xmas and Null */ tcp flags:0x3F/0x3F
+    0     0 DROP       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            /* Scans Xmas and Null */ tcp flags:0x29/0x29
+ 2162  140K ACCEPT     tcp  --  eth0   *       0.0.0.0/0            0.0.0.0/0            /*  IN SSH             */ tcp dpt:443 match-set trustedLst src
+  136  180K ACCEPT     tcp  --  eth0   *       0.0.0.0/0            0.0.0.0/0            /* OUT HTTP            */ tcp spt:80 ctstate RELATED,ESTABLISHED
+    0     0 ACCEPT     tcp  --  eth0   *       0.0.0.0/0            0.0.0.0/0            /* OUT HTTPS           */ tcp spt:443 ctstate RELATED,ESTABLISHED
+    0     0 ACCEPT     tcp  --  eth0   *       0.0.0.0/0            0.0.0.0/0            /* OUT SMTP            */ tcp spt:25 ctstate RELATED,ESTABLISHED
+    6  3032 ACCEPT     tcp  --  eth0   *       0.0.0.0/0            0.0.0.0/0            /* OUT Whois           */ tcp spt:43 ctstate RELATED,ESTABLISHED
+    0     0 ACCEPT     tcp  --  eth0   *       0.0.0.0/0            0.0.0.0/0            /* OUT Whois           */ tcp spt:4321 ctstate RELATED,ESTABLISHED
+    0     0 ACCEPT     tcp  --  eth0   *       0.0.0.0/0            0.0.0.0/0            /* OUT SSH             */ tcp spt:22 ctstate RELATED,ESTABLISHED
+
+Chain TCP_OUT (1 references)
+ pkts bytes target     prot opt in     out     source               destination
+ 1919  224K ACCEPT     tcp  --  *      eth0    0.0.0.0/0            0.0.0.0/0            /*  IN SSH             */ tcp spt:443 match-set trustedLst dst ctstate RELATED,ESTABLISHED
+   89  7559 ACCEPT     tcp  --  *      eth0    0.0.0.0/0            0.0.0.0/0            /* OUT HTTP            */ tcp dpt:80
+    0     0 ACCEPT     tcp  --  *      eth0    0.0.0.0/0            0.0.0.0/0            /* OUT HTTPS           */ tcp dpt:443
+    0     0 ACCEPT     tcp  --  *      eth0    0.0.0.0/0            0.0.0.0/0            /* OUT SMTP            */ tcp dpt:25
+    6   339 ACCEPT     tcp  --  *      eth0    0.0.0.0/0            0.0.0.0/0            /* OUT Whois           */ tcp dpt:43
+    0     0 ACCEPT     tcp  --  *      eth0    0.0.0.0/0            0.0.0.0/0            /* OUT Whois           */ tcp dpt:4321
+    0     0 ACCEPT     tcp  --  *      eth0    0.0.0.0/0            0.0.0.0/0            /* OUT SSH             */ tcp dpt:22
+
+Chain UDP_IN (1 references)
+ pkts bytes target     prot opt in     out     source               destination
+    0     0 ACCEPT     udp  --  eth0   *       0.0.0.0/0            0.0.0.0/0            /* OUT NTP             */ udp spt:123 ctstate RELATED,ESTABLISHED
+   14  3394 ACCEPT     udp  --  eth0   *       0.0.0.0/0            0.0.0.0/0            /* OUT DNS             */ udp spt:53 ctstate RELATED,ESTABLISHED
+
+Chain UDP_OUT (1 references)
+ pkts bytes target     prot opt in     out     source               destination
+    0     0 ACCEPT     udp  --  *      eth0    0.0.0.0/0            0.0.0.0/0            /* OUT NTP             */ udp dpt:123
+   17  1138 ACCEPT     udp  --  *      eth0    0.0.0.0/0            0.0.0.0/0            /* OUT DNS             */ udp dpt:53
+```
+
 
 ===============================================================================
 
