@@ -1,6 +1,32 @@
+iptables-init v4
+================
 
-iptables-init - Last version (v3)
-=================================
+Command line
+------------
+```
+iptables-init/init [ -h | --help ]
+iptables-init/init [ -f | --file ConfFile ] [ -q | --quiet ] [ --network-interface iface ] [ --trusted-list '@ip [ @ip [ ... ] ]' ] [ --trusted-icmp '@ip [ @ip [ ... ] ]' ] start
+iptables-init/init stop | status | blupd | monitor
+iptables-init/init bladd @ip [ @ip [ ... ] ]
+```
+
+Default behavior
+----------------
+Works without config file (just the script).
+Default config file in /etc/default/iptables-init (another one can by specified by command line).
+
+ipset is optional
+-----------------
+Works if [ipset](http://ipset.netfilter.org/) is not installed.
+
+ToDo
+----
+External directory for easy add-ons
+Service launched at startup
+
+
+iptables-init v3
+================
 Shell script to easily initialize iptables rules by incorporating recurrent security.
 
 Simplification
@@ -105,8 +131,8 @@ Chain UDP_OUT (1 references)
 ===============================================================================
 
 
-iptables-init - Previous version (v2)
-=====================================
+iptables-init v2
+================
 
 All details are in the [wiki](https://github.com/BorX/iptables-init/wiki).
 
