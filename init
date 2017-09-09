@@ -83,9 +83,17 @@ do_start() {
 	# Blacklist
 	isIpsetInstalled && {
 		ipset list -n | grep -q blacklist$ || do_blacklist_update
+		ipset create blacklist-lcl -exist hash:net family inet hashsize 16384 maxelem 16384
 		for chain in INPUT OUTPUT FORWARD; do
-			iptables -m comment --comment "BlackList   " -I $chain 1 -m set --match-set blacklist src,dst -j DROP
+			iptables -m comment --comment "BlackListLCL" -I $chain 1 -m set --match-set blacklist-lcl src,dst -j DROP
+			iptables -m comment --comment "BlackList   " -I $chain 2 -m set --match-set blacklist     src,dst -j DROP
 		done
+		iptables -N BLACKLIST
+		iptables -A BLACKLIST -j LOG --log-prefix '[BLACKLIST] '
+		iptables -A BLACKLIST -j SET --add-set blacklist-lcl src
+
+		iptables -A INPUT -m recent --name blacklist --set
+		iptables -A INPUT -m recent --name blacklist --update --seconds 60 --hitcount 4 -j BLACKLIST
 	}
 
 	# Entrant
@@ -143,11 +151,11 @@ do_start() {
 	###############################################################################
 
 	# Depollueurs
-	iptables -m comment --comment "NO_LOG_POLLUTION:ICMP" -A INPUT -p icmp -j DROP
-	iptables -m comment --comment "NO_LOG_POLLUTION: TCP" -A INPUT -p tcp --match multiport --dports 21:25,80,81,222,443,2222,3306,3389 -j DROP
+#	iptables -m comment --comment "NO_LOG_POLLUTION:ICMP" -A INPUT -p icmp -j DROP
+#	iptables -m comment --comment "NO_LOG_POLLUTION: TCP" -A INPUT -p tcp --match multiport --dports 21:25,80,81,222,443,2222,3306,3389 -j DROP
 
 	# Logs
-	iptables -m comment --comment "Logs                 " -A INPUT  -j LOG --log-prefix " [INPUT DROPPED] "
+#	iptables -m comment --comment "Logs        " -A INPUT  -j LOG --log-prefix " [INPUT DROPPED] "
 	iptables -m comment --comment "Logs        "              -A OUTPUT -j LOG --log-prefix "[OUTPUT DROPPED] "
 }
 
