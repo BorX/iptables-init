@@ -82,7 +82,7 @@ do_start() {
 
 	# Blacklist
 	isIpsetInstalled && {
-		ipset list | grep -q blacklist$ || do_blacklist_update
+		ipset list -n | grep -q blacklist$ || do_blacklist_update
 		for chain in INPUT OUTPUT FORWARD; do
 			iptables -m comment --comment "BlackList   " -I $chain 1 -m set --match-set blacklist src,dst -j DROP
 		done
@@ -94,7 +94,7 @@ do_start() {
 	# SSH port 443
 	if [ -n "$TRUSTED_LST" ] && isIpsetInstalled; then
 		ipset create trustedLst -exist hash:net family inet hashsize 16384 maxelem 10; ipset flush trustedLst
-		for host in $TRUSTED_LST; do ipset add trustedLst $host; done
+		for host in $TRUSTED_LST; do ipset add -exist trustedLst $host; done
 		iptables -m comment --comment " IN SSH            " -A TCP_IN  -i $NTWK_INTFCE -m conntrack --ctstate NEW,ESTABLISHED -p tcp --dport   443 -m set --match-set trustedLst src -j ACCEPT
 		iptables -m comment --comment " IN SSH            " -A TCP_OUT -o $NTWK_INTFCE -m conntrack --ctstate     ESTABLISHED -p tcp --sport   443 -m set --match-set trustedLst dst -j ACCEPT
 	else
@@ -134,7 +134,7 @@ do_start() {
 
 	[ -n "$TRUSTED_ICMP" ] && isIpsetInstalled && {
 		ipset create icmp -exist hash:net family inet hashsize 16384 maxelem 10; ipset flush icmp
-		for source in $TRUSTED_ICMP; do ipset add icmp $source; done
+		for source in $TRUSTED_ICMP; do ipset add -exist icmp $source; done
 		iptables -m comment --comment "ICMP        " -i $NTWK_INTFCE -A INPUT  -p icmp -m set --match-set icmp src -j ACCEPT
 		iptables -m comment --comment "ICMP        " -o $NTWK_INTFCE -A OUTPUT -p icmp -m set --match-set icmp dst -j ACCEPT
 	}
@@ -166,24 +166,19 @@ do_monitor() {
 
 
 do_blacklist_update() {
-	ipset create blacklist-tmp -exist hash:net family inet hashsize 16384 maxelem 131072
-
-	{	[ -r "$ROOT_DIR/blacklist-sources.list" ] && sed 's/#.*//g;/^$/d' "$ROOT_DIR/blacklist-sources.list" | while read src; do
-			wget -O- -o/dev/null "$src" | grep -Po '(?:\d{1,3}\.){3}\d{1,3}(?:/\d{1,2})?' | sed 's/#.*//g;/^$/d' | sed -r -e '/^(10\.|127\.|172\.16\.|192\.168\.)/d'
-		done
-		[ -r "$ROOT_DIR/blacklist" ] && sed 's/#.*//g;/^$/d' "$ROOT_DIR/blacklist"
-	} | sort -u | while read ipaddr; do ipset add blacklist-tmp $ipaddr; done
-
 	ipset create blacklist -exist hash:net family inet hashsize 16384 maxelem 131072
-	ipset swap   blacklist blacklist-tmp
-	ipset destroy blacklist-tmp
+
+	[ -r "$ROOT_DIR/blacklist-sources.list" ] && sed 's/#.*//g;/^$/d' "$ROOT_DIR/blacklist-sources.list" | while read src; do
+		wget -O- -o/dev/null "$src" | grep -Po '(?:\d{1,3}\.){3}\d{1,3}(?:/\d{1,2})?' | sed 's/#.*//g;/^$/d' | sed -r -e '/^(10\.|127\.|172\.16\.|192\.168\.)/d' | xargs -rn1 ipset add -exist blacklist
+	done
+	[ -r "$ROOT_DIR/blacklist" ] && sed 's/#.*//g;/^$/d' "$ROOT_DIR/blacklist" | xargs -rn1 ipset add -exist blacklist
 }
 
 
 do_blacklist_add() {
 	for ip in $@; do
-		ipset list blacklist | grep -q $ip || ipset add blacklist $ip
-		grep -q $ip "$ROOT_DIR/blacklist"  || echo $ip >>"$ROOT_DIR/blacklist"
+		ipset add -exist blacklist $ip
+		grep -q $ip "$ROOT_DIR/blacklist" || echo $ip >>"$ROOT_DIR/blacklist"
 	done
 }
 
