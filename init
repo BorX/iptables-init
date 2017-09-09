@@ -143,13 +143,11 @@ do_start() {
 	###############################################################################
 
 	# Depollueurs
-	iptables -m comment --comment "NO_LOG_POLLUTION:Port  21" -A INPUT -p tcp --dport  21 -j DROP
-	iptables -m comment --comment "NO_LOG_POLLUTION:Port  23" -A INPUT -p tcp --dport  23 -j DROP
-	iptables -m comment --comment "NO_LOG_POLLUTION:Port  80" -A INPUT -p tcp --dport  80 -j DROP
-	iptables -m comment --comment "NO_LOG_POLLUTION:Port 443" -A INPUT -p tcp --dport 443 -j DROP
+	iptables -m comment --comment "NO_LOG_POLLUTION:ICMP" -A INPUT -p icmp -j DROP
+	iptables -m comment --comment "NO_LOG_POLLUTION: TCP" -A INPUT -p tcp --match multiport --dports 21:25,80,81,222,443,2222,3306,3389 -j DROP
 
 	# Logs
-	iptables -m comment --comment "Logs                     " -A INPUT  -j LOG --log-prefix " [INPUT DROPPED] "
+	iptables -m comment --comment "Logs                 " -A INPUT  -j LOG --log-prefix " [INPUT DROPPED] "
 	iptables -m comment --comment "Logs        "              -A OUTPUT -j LOG --log-prefix "[OUTPUT DROPPED] "
 }
 
