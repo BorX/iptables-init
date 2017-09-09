@@ -41,13 +41,13 @@ do_start() {
 	###############################################################################
 
 	#IPv4
-	iptables -P INPUT   DROP
-	iptables -P OUTPUT  DROP
+	iptables -P   INPUT DROP
+	iptables -P  OUTPUT DROP
 	iptables -P FORWARD DROP
 
 	# IPv6
-	ip6tables -P INPUT   DROP
-	ip6tables -P OUTPUT  DROP
+	ip6tables -P   INPUT DROP
+	ip6tables -P  OUTPUT DROP
 	ip6tables -P FORWARD DROP
 
 
@@ -103,11 +103,11 @@ do_start() {
 	if [ -n "$TRUSTED_LST" ] && isIpsetInstalled; then
 		ipset create trustedLst -exist hash:net family inet hashsize 16384 maxelem 10; ipset flush trustedLst
 		for host in $TRUSTED_LST; do ipset add -exist trustedLst $host; done
-		iptables -m comment --comment " IN SSH            " -A TCP_IN  -i $NTWK_INTFCE -m conntrack --ctstate NEW,ESTABLISHED -p tcp --dport   443 -m set --match-set trustedLst src -j ACCEPT
-		iptables -m comment --comment " IN SSH            " -A TCP_OUT -o $NTWK_INTFCE -m conntrack --ctstate     ESTABLISHED -p tcp --sport   443 -m set --match-set trustedLst dst -j ACCEPT
+		iptables -m comment --comment " IN SSH            " -A TCP_IN  -i $NTWK_INTFCE -m conntrack --ctstate NEW,ESTABLISHED -p tcp --dport 443 -m set --match-set trustedLst src -j ACCEPT
+		iptables -m comment --comment " IN SSH            " -A TCP_OUT -o $NTWK_INTFCE -m conntrack --ctstate     ESTABLISHED -p tcp --sport 443 -m set --match-set trustedLst dst -j ACCEPT
 	else
-		iptables -m comment --comment " IN SSH            " -A TCP_IN  -i $NTWK_INTFCE -m conntrack --ctstate NEW,ESTABLISHED -p tcp --dport   443 -j ACCEPT
-		iptables -m comment --comment " IN SSH            " -A TCP_OUT -o $NTWK_INTFCE -m conntrack --ctstate     ESTABLISHED -p tcp --sport   443 -j ACCEPT
+		iptables -m comment --comment " IN SSH            " -A TCP_IN  -i $NTWK_INTFCE -m conntrack --ctstate NEW,ESTABLISHED -p tcp --dport 443 -j ACCEPT
+		iptables -m comment --comment " IN SSH            " -A TCP_OUT -o $NTWK_INTFCE -m conntrack --ctstate     ESTABLISHED -p tcp --sport 443 -j ACCEPT
 	fi
 
 
@@ -137,13 +137,14 @@ do_start() {
 	iptables -m comment --comment "OUT SSH            " -A TCP_OUT -o $NTWK_INTFCE -m conntrack --ctstate NEW,ESTABLISHED -p tcp --dport   22 -j ACCEPT
 	iptables -m comment --comment "OUT SSH            " -A TCP_IN  -i $NTWK_INTFCE -m conntrack --ctstate     ESTABLISHED -p tcp --sport   22 -j ACCEPT
 
+
 	# ICMP
 	###############################################################################
 
 	[ -n "$TRUSTED_ICMP" ] && isIpsetInstalled && {
 		ipset create icmp -exist hash:net family inet hashsize 16384 maxelem 10; ipset flush icmp
 		for source in $TRUSTED_ICMP; do ipset add -exist icmp $source; done
-		iptables -m comment --comment "ICMP        " -i $NTWK_INTFCE -A INPUT  -p icmp -m set --match-set icmp src -j ACCEPT
+		iptables -m comment --comment "ICMP        " -i $NTWK_INTFCE -A  INPUT -p icmp -m set --match-set icmp src -j ACCEPT
 		iptables -m comment --comment "ICMP        " -o $NTWK_INTFCE -A OUTPUT -p icmp -m set --match-set icmp dst -j ACCEPT
 	}
 
