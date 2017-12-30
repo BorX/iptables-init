@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+iptables -m comment --comment "OUT SSH            " -A TCP_OUT -o $NTWK_INTFCE -m conntrack --ctstate NEW,ESTABLISHED -p tcp --dport   22 -j ACCEPT
+iptables -m comment --comment "OUT SSH            " -A TCP_IN  -i $NTWK_INTFCE -m conntrack --ctstate     ESTABLISHED -p tcp --sport   22 -j ACCEPT
+

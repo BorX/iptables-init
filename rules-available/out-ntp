@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+
+iptables -m comment --comment "OUT NTP            " -A UDP_OUT -o $NTWK_INTFCE -m conntrack --ctstate NEW,ESTABLISHED -p udp --dport  123 -j ACCEPT
+iptables -m comment --comment "OUT NTP            " -A UDP_IN  -i $NTWK_INTFCE -m conntrack --ctstate     ESTABLISHED -p udp --sport  123 -j ACCEPT
+
