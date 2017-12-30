@@ -16,17 +16,20 @@ do_clear() {
 	iptables -P   INPUT ACCEPT
 	iptables -P  OUTPUT ACCEPT
 	iptables -P FORWARD ACCEPT
-	iptables -F
-	iptables -X
+#	iptables -F
+	# Flush all chains but FORWARD and docker chains
+	iptables -nL | sed -n 's/^Chain \([^ ]*\) .*/\1/p' | grep -vi docker | grep -v '^FORWARD$'                   | xargs -rn1 iptables -F
+	# Delete all rules in FORWARD but docker rules
+	iptables --line-numbers -nvL FORWARD | grep -iv docker | awk 'NR>2{print $1}' | sort -rn                     | xargs -rn1 iptables -D FORWARD 
+#	iptables -X
+	# Delete all chains but INPUT, OUTPUT, FORWARD and docker chains
+	iptables -nL | sed -n 's/^Chain \([^ ]*\) .*/\1/p' | grep -vi docker | grep -vE '^INPUT$|^OUTPUT$|^FORWARD$' | xargs -rn1 iptables -X
 
 	ip6tables -P   INPUT ACCEPT
 	ip6tables -P  OUTPUT ACCEPT
 	ip6tables -P FORWARD ACCEPT
 	ip6tables -F
 	ip6tables -X
-
-	# ToDo : Clean chains one by one and keep Docker chain instead of flushing everything and restarting Docker Service
-	systemctl restart docker.service ; until iptables -L | grep -q DOCKER; do sleep 1; done
 }
 
 
