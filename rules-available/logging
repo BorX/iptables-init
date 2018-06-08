@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+# Depollueurs
+#	iptables -m comment --comment "NO_LOG_POLLUTION:ICMP" -A INPUT -p icmp -j DROP
+#	iptables -m comment --comment "NO_LOG_POLLUTION: TCP" -A INPUT -p tcp --match multiport --dports 21:25,80,81,222,443,2222,3306,3389 -j DROP
+
+# Logs
+iptables -m comment --comment "Logs        " -A   INPUT -j LOG --log-prefix "  [INPUT DROPPED] "
+iptables -m comment --comment "Logs        " -A  OUTPUT -j LOG --log-prefix " [OUTPUT DROPPED] "
+iptables -m comment --comment "Logs        " -A FORWARD -j LOG --log-prefix "[FORWARD DROPPED] "
+

@@ -6,7 +6,7 @@ Command line
 ```
 iptables-init/init [ -h | --help ]
 iptables-init/init [ -f | --file ConfFile ] [ -q | --quiet ] [ --network-interface iface ] [ --trusted-list '@ip [ @ip [ ... ] ]' ] [ --trusted-icmp '@ip [ @ip [ ... ] ]' ] start
-iptables-init/init stop | status | blupd | monitor
+iptables-init/init stop | status | blupd | cron | monitor
 iptables-init/init bladd @ip [ @ip [ ... ] ]
 ```
 

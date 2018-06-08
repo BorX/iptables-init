@@ -1,33 +1,31 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 ROOT_DIR="$(cd "$(dirname "$0")"; pwd)"
 PATH=/sbin:$PATH
 
 
 do_status() {
-	iptables -vL
+	iptables -nvL
 	echo
-	ip6tables -vL
+	ip6tables -nvL
 }
 
 
 do_clear() {
 	# Reinitialisation des tables
-	iptables -P   INPUT ACCEPT
-	iptables -P  OUTPUT ACCEPT
-	iptables -P FORWARD ACCEPT
+	for chain in INPUT OUTPUT FORWARD; do iptables -P $chain ACCEPT; done
+
 #	iptables -F
 	# Flush all chains but FORWARD and docker chains
 	iptables -nL | sed -n 's/^Chain \([^ ]*\) .*/\1/p' | grep -vi docker | grep -v '^FORWARD$'                   | xargs -rn1 iptables -F
 	# Delete all rules in FORWARD but docker rules
 	iptables --line-numbers -nvL FORWARD | grep -iv docker | awk 'NR>2{print $1}' | sort -rn                     | xargs -rn1 iptables -D FORWARD 
+
 #	iptables -X
 	# Delete all chains but INPUT, OUTPUT, FORWARD and docker chains
 	iptables -nL | sed -n 's/^Chain \([^ ]*\) .*/\1/p' | grep -vi docker | grep -vE '^INPUT$|^OUTPUT$|^FORWARD$' | xargs -rn1 iptables -X
 
-	ip6tables -P   INPUT ACCEPT
-	ip6tables -P  OUTPUT ACCEPT
-	ip6tables -P FORWARD ACCEPT
+	for chain in INPUT OUTPUT FORWARD; do ip6tables -P $chain ACCEPT; done
 	ip6tables -F
 	ip6tables -X
 }
@@ -39,6 +37,39 @@ isIpsetInstalled() {
 
 
 do_start() {
+
+	# Split TCP / UDP
+	###############################################################################
+
+	xargs -n1 iptables -N <<<'TCP_IN TCP_OUT UDP_IN UDP_OUT'
+
+	# TCP
+	iptables -m comment --comment "Split TCP   " -A  INPUT -p tcp -j TCP_IN
+	iptables -m comment --comment "Split TCP   " -A OUTPUT -p tcp -j TCP_OUT
+
+	# UDP
+	iptables -m comment --comment "Split UDP   " -A  INPUT -p udp -j UDP_IN
+	iptables -m comment --comment "Split UDP   " -A OUTPUT -p udp -j UDP_OUT
+
+
+	# Rules loading
+	###############################################################################
+
+	for addons in "$ROOT_DIR/rules-enabled"/*; do
+		source "$addons"
+	done
+
+
+	# ICMP
+	###############################################################################
+
+	[ -n "$TRUSTED_ICMP" ] && isIpsetInstalled && {
+		ipset create icmp -exist hash:net family inet hashsize 16384 maxelem 10; ipset flush icmp
+		for source in $TRUSTED_ICMP; do ipset add -exist icmp $source; done
+		iptables -m comment --comment "ICMP        " -i $NTWK_INTFCE -A  INPUT -p icmp -m set --match-set icmp src -j ACCEPT
+		iptables -m comment --comment "ICMP        " -o $NTWK_INTFCE -A OUTPUT -p icmp -m set --match-set icmp dst -j ACCEPT
+	}
+
 
 	# Default policies
 	###############################################################################
@@ -52,104 +83,6 @@ do_start() {
 	ip6tables -P   INPUT DROP
 	ip6tables -P  OUTPUT DROP
 	ip6tables -P FORWARD DROP
-
-
-	# Chains for split TCP / UDP
-	###############################################################################
-
-	for chain in TCP_IN TCP_OUT UDP_IN UDP_OUT; do
-		iptables -N $chain
-	done
-
-
-	# Rules loading
-	###############################################################################
-
-	for addons in "$ROOT_DIR/rules-enabled"/*; do
-		source "$addons"
-	done
-
-
-	# Split TCP / UDP
-	###############################################################################
-
-	# TCP
-	iptables -m comment --comment "Split TCP   " -i $NTWK_INTFCE -A  INPUT -p tcp -j TCP_IN
-	iptables -m comment --comment "Split TCP   " -o $NTWK_INTFCE -A OUTPUT -p tcp -j TCP_OUT
-
-	# UDP
-	iptables -m comment --comment "Split UDP   " -i $NTWK_INTFCE -A  INPUT -p udp -j UDP_IN
-	iptables -m comment --comment "Split UDP   " -o $NTWK_INTFCE -A OUTPUT -p udp -j UDP_OUT
-
-
-	# Security
-	###############################################################################
-
-	# Scans Xmas and Null
-	for chain in TCP_IN FORWARD; do
-		iptables -m comment --comment "Scans Xmas and Null" -I $chain 1 -p tcp --tcp-flags FIN,URG,PSH FIN,URG,PSH -j DROP
-		iptables -m comment --comment "Scans Xmas and Null" -I $chain 1 -p tcp --tcp-flags ALL ALL                 -j DROP
-		iptables -m comment --comment "Scans Xmas and Null" -I $chain 1 -p tcp --tcp-flags ALL NONE                -j DROP
-		iptables -m comment --comment "Scans Xmas and Null" -I $chain 1 -p tcp --tcp-flags SYN,RST SYN,RST         -j DROP
-	done
-
-	# No broadcast and multicast
-	for chain in INPUT FORWARD; do
-		iptables -m comment --comment "No broadcast" -I $chain 1 -m pkttype --pkt-type broadcast -j DROP
-		iptables -m comment --comment "No multicast" -I $chain 1 -m pkttype --pkt-type multicast -j DROP
-	done
-
-	# Blacklist
-	isIpsetInstalled && {
-		ipset list -n | grep -q blacklist$ || do_blacklist_update
-		ipset create blacklist-lcl -exist hash:net family inet hashsize 16384 maxelem 16384
-		for chain in INPUT OUTPUT FORWARD; do
-			iptables -m comment --comment "BlackListLCL" -I $chain 1 -m set --match-set blacklist-lcl src,dst -j DROP
-			iptables -m comment --comment "BlackList   " -I $chain 2 -m set --match-set blacklist     src,dst -j DROP
-		done
-		iptables -N BLACKLIST
-		iptables -A BLACKLIST -j LOG --log-prefix '[BLACKLIST] '
-		iptables -A BLACKLIST -j SET --add-set blacklist-lcl src
-
-		iptables -A INPUT -m recent --name blacklist --set
-		iptables -A INPUT -m recent --name blacklist --update --seconds 60 --hitcount 4 -j BLACKLIST
-	}
-
-	# Entrant
-	###############################################################################
-
-	# SSH port 443
-	if [ -n "$TRUSTED_LST" ] && isIpsetInstalled; then
-		ipset create trustedLst -exist hash:net family inet hashsize 16384 maxelem 10; ipset flush trustedLst
-		for host in $TRUSTED_LST; do ipset add -exist trustedLst $host; done
-		iptables -m comment --comment " IN SSH            " -A TCP_IN  -i $NTWK_INTFCE -m conntrack --ctstate NEW,ESTABLISHED -p tcp --dport 443 -m set --match-set trustedLst src -j ACCEPT
-		iptables -m comment --comment " IN SSH            " -A TCP_OUT -o $NTWK_INTFCE -m conntrack --ctstate     ESTABLISHED -p tcp --sport 443 -m set --match-set trustedLst dst -j ACCEPT
-	else
-		iptables -m comment --comment " IN SSH            " -A TCP_IN  -i $NTWK_INTFCE -m conntrack --ctstate NEW,ESTABLISHED -p tcp --dport 443 -j ACCEPT
-		iptables -m comment --comment " IN SSH            " -A TCP_OUT -o $NTWK_INTFCE -m conntrack --ctstate     ESTABLISHED -p tcp --sport 443 -j ACCEPT
-	fi
-
-
-	# ICMP
-	###############################################################################
-
-	[ -n "$TRUSTED_ICMP" ] && isIpsetInstalled && {
-		ipset create icmp -exist hash:net family inet hashsize 16384 maxelem 10; ipset flush icmp
-		for source in $TRUSTED_ICMP; do ipset add -exist icmp $source; done
-		iptables -m comment --comment "ICMP        " -i $NTWK_INTFCE -A  INPUT -p icmp -m set --match-set icmp src -j ACCEPT
-		iptables -m comment --comment "ICMP        " -o $NTWK_INTFCE -A OUTPUT -p icmp -m set --match-set icmp dst -j ACCEPT
-	}
-
-	# Logs
-	###############################################################################
-
-	# Depollueurs
-#	iptables -m comment --comment "NO_LOG_POLLUTION:ICMP" -A INPUT -p icmp -j DROP
-#	iptables -m comment --comment "NO_LOG_POLLUTION: TCP" -A INPUT -p tcp --match multiport --dports 21:25,80,81,222,443,2222,3306,3389 -j DROP
-
-	# Logs
-#	iptables -m comment --comment "Logs        " -A INPUT  -j LOG --log-prefix " [INPUT DROPPED] "
-	iptables -m comment --comment "Logs        "              -A OUTPUT -j LOG --log-prefix "[OUTPUT DROPPED] "
 }
 
 
@@ -174,6 +107,12 @@ do_blacklist_update() {
 }
 
 
+do_blacklist_update_cron() {
+	{ crontab -l ; echo "00 07 * * * $ROOT_DIR/init blupd"; } | crontab
+	crontab -e
+}
+
+
 do_blacklist_add() {
 	for ip in $@; do
 		ipset add -exist blacklist $ip
@@ -187,7 +126,7 @@ usage() {
 usages:
 $0 [ -h | --help ]
 $0 [ -f | --file ConfFile ] [ -q | --quiet ] [ --network-interface iface ] [ --trusted-list '@ip [ @ip [ ... ] ]' ] [ --trusted-icmp '@ip [ @ip [ ... ] ]' ] start
-$0 stop | status | blupd | monitor
+$0 stop | status | blupd | cron | monitor
 $0 bladd @ip [ @ip [ ... ] ]
 EOF
 }
@@ -239,10 +178,11 @@ while true; do
 done
 
 case "$1" in
-	blupd)   do_blacklist_update ;;
-	status)  do_status           ;;
-	monitor) do_monitor          ;;
-	stop)    do_clear            ;;
+	blupd)   do_blacklist_update      ;;
+	cron)    do_blacklist_update_cron ;;
+	status)  do_status                ;;
+	monitor) do_monitor               ;;
+	stop)    do_clear                 ;;
 	start)   do_clear; do_start
 		$QUIET || {
 			do_status

@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+# Scans Xmas and Null
+for chain in TCP_IN FORWARD; do
+	iptables -m comment --comment "Scans Xmas and Null" -I $chain 1 -p tcp --tcp-flags FIN,URG,PSH FIN,URG,PSH -j DROP
+	iptables -m comment --comment "Scans Xmas and Null" -I $chain 1 -p tcp --tcp-flags ALL ALL                 -j DROP
+	iptables -m comment --comment "Scans Xmas and Null" -I $chain 1 -p tcp --tcp-flags ALL NONE                -j DROP
+	iptables -m comment --comment "Scans Xmas and Null" -I $chain 1 -p tcp --tcp-flags SYN,RST SYN,RST         -j DROP
+done
+
+# No broadcast and multicast
+for chain in INPUT FORWARD; do
+	iptables -m comment --comment "No broadcast" -I $chain 1 -m pkttype --pkt-type broadcast -j DROP
+	iptables -m comment --comment "No multicast" -I $chain 1 -m pkttype --pkt-type multicast -j DROP
+done
+

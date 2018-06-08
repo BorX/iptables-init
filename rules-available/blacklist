@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+
+isIpsetInstalled && {
+	ipset list -n | grep -q blacklist$ || do_blacklist_update
+	ipset create blacklist-lcl -exist hash:net family inet hashsize 16384 maxelem 16384
+	for chain in INPUT OUTPUT FORWARD; do
+		iptables -m comment --comment "BlackListLCL" -I $chain 1 -m set --match-set blacklist-lcl src,dst -j DROP
+		iptables -m comment --comment "BlackList   " -I $chain 2 -m set --match-set blacklist     src,dst -j DROP
+	done
+	iptables -N BLACKLIST
+	iptables -A BLACKLIST -m set --match-set trustedLst src,dst -m recent --name blacklist --remove -j RETURN
+	iptables -A BLACKLIST -j LOG --log-prefix '      [BLACKLIST] '
+	iptables -A BLACKLIST -j SET --add-set blacklist-lcl src
+
+	iptables -A INPUT -i $NTWK_INTFCE -m recent --name blacklist --set
+	iptables -A INPUT -i $NTWK_INTFCE -m recent --name blacklist --update --seconds 600 --hitcount 4 -j BLACKLIST
+}
