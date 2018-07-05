@@ -99,11 +99,13 @@ do_monitor() {
 
 do_blacklist_update() {
 	ipset create blacklist -exist hash:net family inet hashsize 16384 maxelem 262144
+	ipset list blacklist | head | grep Number
 
 	[ -r "$ROOT_DIR/blacklist-sources.list" ] && sed 's/#.*//g;/^$/d' "$ROOT_DIR/blacklist-sources.list" | while read src; do
 		wget -O- -o/dev/null "$src" | grep -Po '(?:\d{1,3}\.){3}\d{1,3}(?:/\d{1,2})?' | sed 's/#.*//g;/^$/d' | sed -r -e '/^(10\.|127\.|172\.16\.|192\.168\.)/d' | xargs -rn1 ipset add -exist blacklist
 	done
 	[ -r "$ROOT_DIR/blacklist" ] && sed 's/#.*//g;/^$/d' "$ROOT_DIR/blacklist" | xargs -rn1 ipset add -exist blacklist
+	ipset list blacklist | head | grep Number
 }
 
 
