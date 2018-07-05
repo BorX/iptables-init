@@ -1,13 +1,32 @@
-file:///etc/iptables/blacklist # optional, for your personal nemeses (no typo, plural)
-http://www.projecthoneypot.org/list_of_ips.php?t=d&rss=1 # Project Honey Pot Directory of Dictionary Attacker IPs
+# Project Honey Pot Directory of Dictionary Attacker IPs
+http://www.projecthoneypot.org/list_of_ips.php?by=1&rss=1
+http://www.projecthoneypot.org/list_of_ips.php?by=2&rss=1
+http://www.projecthoneypot.org/list_of_ips.php?by=3&rss=1
+http://www.projecthoneypot.org/list_of_ips.php?by=4&rss=1
+http://www.projecthoneypot.org/list_of_ips.php?by=5&rss=1
+http://www.projecthoneypot.org/list_of_ips.php?by=6&rss=1
+http://www.projecthoneypot.org/list_of_ips.php?by=7&rss=1
+http://www.projecthoneypot.org/list_of_ips.php?by=8&rss=1
+http://www.projecthoneypot.org/list_of_ips.php?by=9&rss=1
+http://www.projecthoneypot.org/list_of_ips.php?by=10&rss=1
+http://www.projecthoneypot.org/list_of_ips.php?by=11&rss=1
+http://www.projecthoneypot.org/list_of_ips.php?by=12&rss=1
+http://www.projecthoneypot.org/list_of_ips.php?by=13&rss=1
+
+# Spamhaus Don't Route Or Peer List (DROP)
+https://www.spamhaus.org/drop/drop.txt
+https://www.spamhaus.org/drop/edrop.txt
+#https://www.spamhaus.org/drop/dropv6.txt
+
 https://check.torproject.org/cgi-bin/TorBulkExitList.py?ip=1.1.1.1  # TOR Exit Nodes
-https://www.maxmind.com/en/proxy-detection-sample-list # MaxMind GeoIP Anonymous Proxies
-http://danger.rulez.sk/projects/bruteforceblocker/blist.php # BruteForceBlocker IP List
-https://www.spamhaus.org/drop/drop.lasso # Spamhaus Don't Route Or Peer List (DROP)
-http://cinsscore.com/list/ci-badguys.txt # C.I. Army Malicious IP List
-https://www.openbl.org/lists/base.txt  # OpenBL.org 30 day List
-https://www.autoshun.org/files/shunlist.csv # Autoshun Shun List
-https://lists.blocklist.de/lists/all.txt # blocklist.de attackers
-https://www.stopforumspam.com/downloads/toxic_ip_cidr.txt # StopForumSpam
-http://blocklist.greensnow.co/greensnow.txt # GreenSnow
+https://www.maxmind.com/en/proxy-detection-sample-list              # MaxMind GeoIP Anonymous Proxies
+http://danger.rulez.sk/projects/bruteforceblocker/blist.php         # BruteForceBlocker IP List
+http://cinsscore.com/list/ci-badguys.txt                            # C.I. Army Malicious IP List
+https://lists.blocklist.de/lists/all.txt                            # blocklist.de attackers
+https://www.stopforumspam.com/downloads/toxic_ip_cidr.txt           # StopForumSpam
+http://blocklist.greensnow.co/greensnow.txt                         # GreenSnow
+
+#https://www.openbl.org/lists/base.txt                              # OpenBL.org 30 day List
+#https://www.autoshun.org/files/shunlist.csv                        # Autoshun Shun List
+
 # http://ipverse.net/ipblocks/data/countries/xx.zone # Ban an entire country, see http://ipverse.net/ipblocks/data/countries/
