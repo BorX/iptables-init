@@ -1,22 +1,74 @@
 #!/bin/bash
 
-BLACKLIST="$(cd "$(dirname "$0")"; pwd)/blacklist"
+ROOT_DIR="$(cd "$(dirname "$0")"; pwd)"
+PATH=/sbin:$PATH
 
-TMP_FILE="$(mktemp)"
 
-{
-	grep '" [45][0-9][0-9] ' /data/wordpress/logs/access.log | cut -d'-' -f1 | sort | uniq -c | awk '$1>100  {print $2}'
-	grep '/xmlrpc.php'       /data/wordpress/logs/access.log | cut -d'-' -f1 | sort | uniq -c | awk '$1>1000 {print $2}'
-	sed 's/#.*//g;/^$/d' "$BLACKLIST"
-}	| sort -u >"$TMP_FILE"
+do_blacklist_update() {
+	local begin="$(date +%s)"
 
-cp -a "$BLACKLIST" "${BLACKLIST}_$(date +%y%m%d-%H%M)"
->"$BLACKLIST"
+	ipset create blacklist -exist hash:net family inet hashsize 16384 maxelem 262144
 
-while read ip; do
-	echo $ip
-	whois $ip | egrep -i '^(orgname|address|city|person|country)' | sed 's/\(.*\)/# \1/'
-done <"$TMP_FILE" >>"$BLACKLIST"
+	local oldNum="$(ipset list blacklist | head | sed -n 's/Number of entries: \([0-9]*$\)/\1/p')"
 
-rm "$TMP_FILE"
+	[ -r "$ROOT_DIR/blacklist-sources.list" ] && sed 's/#.*//g;/^$/d' "$ROOT_DIR/blacklist-sources.list" | while read src; do
+		wget -O- -o/dev/null "$src" | grep -Po '(?:\d{1,3}\.){3}\d{1,3}(?:/\d{1,2})?' | sed 's/#.*//g;/^$/d' | sed -r -e '/^(10\.|127\.|172\.16\.|192\.168\.)/d' | xargs -rn1 ipset add -exist blacklist
+	done
+	[ -r "$ROOT_DIR/blacklist.local" ] && sed 's/#.*//g;/^$/d' "$ROOT_DIR/blacklist.local" | xargs -rn1 ipset add -exist blacklist
 
+	local newNum="$(ipset list blacklist | head | sed -n 's/Number of entries: \([0-9]*$\)/\1/p')"
+	echo "Blacklist refreshed in $(($(date +%s) - $begin)) seconds. $oldNum -> $newNum (+$((newNum - oldNum)))"
+}
+
+
+do_blacklist_prepare_cron() {
+	{ crontab -l ; echo "#00 07 * * * $ROOT_DIR/$(basename "$0") update"; } | crontab
+	crontab -e
+}
+
+
+do_blacklist_add() {
+	for ip in $@; do
+		ipset add -exist blacklist $ip
+		grep -q $ip "$ROOT_DIR/blacklist.local" || echo $ip >>"$ROOT_DIR/blacklist.local"
+	done
+}
+
+
+usage() {
+	cat <<EOF
+usages:
+$0 update | preparecrontab
+$0 bladd @ip [ @ip [ ... ] ]
+EOF
+}
+
+case "$1" in
+	update)         do_blacklist_update       ;;
+	preparecrontab) do_blacklist_prepare_cron ;;
+	add)     shift; do_blacklist_add $@ ;;
+	*) usage >&2 ; exit 1 ;;
+esac
+
+
+
+example_update() {
+	local BLACKLIST="$(cd "$(dirname "$0")"; pwd)/blacklist"
+	local TMP_FILE="$(mktemp)"
+
+	{
+		grep '" [45][0-9][0-9] ' /data/wordpress/logs/access.log | cut -d'-' -f1 | sort | uniq -c | awk '$1>100  {print $2}'
+		grep '/xmlrpc.php'       /data/wordpress/logs/access.log | cut -d'-' -f1 | sort | uniq -c | awk '$1>1000 {print $2}'
+		sed 's/#.*//g;/^$/d' "$BLACKLIST"
+	}	| sort -u >"$TMP_FILE"
+
+	cp -a "$BLACKLIST" "${BLACKLIST}_$(date +%y%m%d-%H%M)"
+	>"$BLACKLIST"
+
+	while read ip; do
+		echo $ip
+		whois $ip | egrep -i '^(orgname|address|city|person|country)' | sed 's/\(.*\)/# \1/'
+	done <"$TMP_FILE" >>"$BLACKLIST"
+
+	rm "$TMP_FILE"
+}

@@ -97,39 +97,12 @@ do_monitor() {
 }
 
 
-do_blacklist_update() {
-	ipset create blacklist -exist hash:net family inet hashsize 16384 maxelem 262144
-	ipset list blacklist | head | grep Number
-
-	[ -r "$ROOT_DIR/blacklist-sources.list" ] && sed 's/#.*//g;/^$/d' "$ROOT_DIR/blacklist-sources.list" | while read src; do
-		wget -O- -o/dev/null "$src" | grep -Po '(?:\d{1,3}\.){3}\d{1,3}(?:/\d{1,2})?' | sed 's/#.*//g;/^$/d' | sed -r -e '/^(10\.|127\.|172\.16\.|192\.168\.)/d' | xargs -rn1 ipset add -exist blacklist
-	done
-	[ -r "$ROOT_DIR/blacklist.local" ] && sed 's/#.*//g;/^$/d' "$ROOT_DIR/blacklist.local" | xargs -rn1 ipset add -exist blacklist
-	ipset list blacklist | head | grep Number
-}
-
-
-do_blacklist_update_cron() {
-	{ crontab -l ; echo "#00 07 * * * $ROOT_DIR/init blupd"; } | crontab
-	crontab -e
-}
-
-
-do_blacklist_add() {
-	for ip in $@; do
-		ipset add -exist blacklist $ip
-		grep -q $ip "$ROOT_DIR/blacklist.local" || echo $ip >>"$ROOT_DIR/blacklist.local"
-	done
-}
-
-
 usage() {
 	cat <<EOF
 usages:
 $0 [ -h | --help ]
 $0 [ -f | --file ConfFile ] [ -q | --quiet ] [ --network-interface iface ] [ --trusted-list '@ip [ @ip [ ... ] ]' ] [ --trusted-icmp '@ip [ @ip [ ... ] ]' ] start
-$0 stop | status | blupd | cron | monitor
-$0 bladd @ip [ @ip [ ... ] ]
+$0 stop | status | monitor
 EOF
 }
 
@@ -180,8 +153,6 @@ while true; do
 done
 
 case "$1" in
-	blupd)   do_blacklist_update      ;;
-	cron)    do_blacklist_update_cron ;;
 	status)  do_status                ;;
 	monitor) do_monitor               ;;
 	stop)    do_clear                 ;;
@@ -195,6 +166,5 @@ case "$1" in
 			do_clear
 		}
 		;;
-	bladd) shift; do_blacklist_add $@ ;;
 	*) usage >&2 ; exit 1 ;;
 esac
