@@ -108,7 +108,7 @@ do_blacklist_update() {
 
 
 do_blacklist_update_cron() {
-	{ crontab -l ; echo "00 07 * * * $ROOT_DIR/init blupd"; } | crontab
+	{ crontab -l ; echo "#00 07 * * * $ROOT_DIR/init blupd"; } | crontab
 	crontab -e
 }
 
