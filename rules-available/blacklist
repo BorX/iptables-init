@@ -15,6 +15,6 @@ isIpsetInstalled && {
 	iptables -A BLACKLIST -j LOG --log-prefix '      [BLACKLIST] '
 	iptables -A BLACKLIST -j SET --add-set blacklist-lcl src
 
-	iptables -A INPUT -i $NTWK_INTFCE -m recent --name blacklist --set
-	iptables -A INPUT -i $NTWK_INTFCE -m recent --name blacklist --update --seconds 600 --hitcount 4 -j BLACKLIST
+	iptables -A INPUT -m recent --name blacklist --set
+	iptables -A INPUT -m recent --name blacklist --update --seconds 600 --hitcount 4 -j BLACKLIST
 }
