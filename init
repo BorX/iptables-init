@@ -4,107 +4,8 @@ ROOT_DIR="$(cd "$(dirname "$0")"; pwd)"
 PATH=/sbin:$PATH
 
 
-do_status() {
-	for command in ip6tables iptables; do
-		for table in security raw mangle nat filter; do
-			printf "================================= %-9s %8s =================================\n" "$command" "$table"
-			$command --table $table -nvL
-		done
-	done
-}
-
-
-do_clear() {
-	keepDocker=false
-	if $keepDocker; then
-		# Flush all chains but FORWARD and docker chains
-		iptables -nL | sed -n 's/^Chain \([^ ]*\) .*/\1/p' | grep -vi docker | grep -v '^FORWARD$'                   | xargs -rn1 iptables -F
-
-		# Delete all rules in FORWARD but docker rules
-		iptables --line-numbers -nvL FORWARD | grep -iv docker | awk 'NR>2{print $1}' | sort -rn                     | xargs -rn1 iptables -D FORWARD 
-
-		# Delete all chains but INPUT, OUTPUT, FORWARD and docker chains
-		iptables -nL | sed -n 's/^Chain \([^ ]*\) .*/\1/p' | grep -vi docker | grep -vE '^INPUT$|^OUTPUT$|^FORWARD$' | xargs -rn1 iptables -X
-	else
-		for table in nat filter; do
-			iptables --table $table -F
-			iptables --table $table -X
-		done
-	fi
-
-	for table in nat filter; do
-		ip6tables --table $table -F
-		ip6tables --table $table -X
-	done
-
-	declare -A tables
-	tables=(['security']='INPUT FORWARD OUTPUT' ['raw']='PREROUTING OUTPUT' ['mangle']='PREROUTING INPUT FORWARD OUTPUT POSTROUTING' ['nat']='PREROUTING INPUT OUTPUT POSTROUTING' ['filter']='INPUT FORWARD OUTPUT')
-	for command in iptables ip6tables; do
-		for table in security raw mangle; do
-			$command --table $table -F
-			$command --table $table -X
-		done
-		for table in security raw mangle nat filter; do
-			for chain in ${tables[$table]}; do
-				$command --table $table --policy $chain ACCEPT
-			done
-		done
-	done
-}
-
-
 isIpsetInstalled() {
 	which ipset &>/dev/null
-}
-
-
-do_start() {
-
-	# Split TCP / UDP
-	###############################################################################
-
-	xargs -n1 iptables -N <<<'TCP_IN TCP_OUT UDP_IN UDP_OUT'
-
-	# TCP
-	iptables -m comment --comment "Split TCP   " -A  INPUT -p tcp -j TCP_IN
-	iptables -m comment --comment "Split TCP   " -A OUTPUT -p tcp -j TCP_OUT
-
-	# UDP
-	iptables -m comment --comment "Split UDP   " -A  INPUT -p udp -j UDP_IN
-	iptables -m comment --comment "Split UDP   " -A OUTPUT -p udp -j UDP_OUT
-
-
-	# Rules loading
-	###############################################################################
-
-	for addons in "$ROOT_DIR/rules-enabled"/*; do
-		source "$addons"
-	done
-
-
-	# ICMP
-	###############################################################################
-
-	[ -n "$TRUSTED_ICMP" ] && isIpsetInstalled && {
-		ipset create icmp -exist hash:net family inet hashsize 16384 maxelem 10; ipset flush icmp
-		for source in $TRUSTED_ICMP; do ipset add -exist icmp $source; done
-		iptables -m comment --comment "ICMP        " -i $NTWK_INTFCE -A  INPUT -p icmp -m set --match-set icmp src -j ACCEPT
-		iptables -m comment --comment "ICMP        " -o $NTWK_INTFCE -A OUTPUT -p icmp -m set --match-set icmp dst -j ACCEPT
-	}
-
-
-	# Default policies
-	###############################################################################
-
-	#IPv4
-	iptables -P   INPUT DROP
-	iptables -P  OUTPUT DROP
-	iptables -P FORWARD DROP
-
-	# IPv6
-	ip6tables -P   INPUT DROP
-	ip6tables -P  OUTPUT DROP
-	ip6tables -P FORWARD DROP
 }
 
 
@@ -123,15 +24,16 @@ usage() {
 	cat <<EOF
 usages:
 $0 [ -h | --help ]
-$0 [ -f | --file ConfFile ] [ -q | --quiet ] [ --network-interface iface ] [ --trusted-list '@ip [ @ip [ ... ] ]' ] [ --trusted-icmp '@ip [ @ip [ ... ] ]' ] start
-$0 stop | status | monitor
+$0 [ -f | --file ConfFile ] [ -q | --quiet ] [ --network-interface iface ] [ --trusted-list '@ip [ ... ]' ] [ --trusted-icmp '@ip [ ... ]' ] mode
+$0 list
 EOF
 }
 
 
 ###############################################################################
-# Main
-###############################################################################
+# Options
+
+# Settings passed in command line  >  Config file passed in command line  >  Default config file  >  Default options
 
 # Default options
 QUIET=false
@@ -174,19 +76,31 @@ while true; do
 	esac
 done
 
-case "$1" in
-	status)  do_status                ;;
-	monitor) do_monitor               ;;
-	stop)    do_clear                 ;;
-	start)   do_clear; do_start
-		$QUIET || {
-			do_status
-			echo
-			echo "La configuration sera annulée dans 60 secondes."
-			echo "Appuyer sur CTRL-C pour l'appliquer définitivement..."
-			sleep 60
-			do_clear
-		}
-		;;
-	*) usage >&2 ; exit 1 ;;
-esac
+
+###############################################################################
+# Mode
+
+[ -n "$1" ] || { usage >&2 ; exit 1 ; }
+
+[ "$1" == 'list' ] && {
+	find "$ROOT_DIR/modes" -follow | sort | sed "s,$ROOT_DIR/modes,,;/^$/d;s,[^/]*/,|   ,g;s,| *\([^| ]\),+- \1,"
+	exit 0
+}
+
+[ -d "$ROOT_DIR/modes/$1" ] || exit 2
+
+
+do_load_mode() {
+	local modeDir="$1"
+
+	for addons in "$modeDir"/*; do
+		if [ -f "$addons" ]; then
+			source "$addons"
+		else
+			do_load_mode "$addons"
+		fi
+	done
+}
+
+do_load_mode "$ROOT_DIR/modes/$1"
+

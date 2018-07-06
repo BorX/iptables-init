@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+#IPv4
+iptables -P   INPUT DROP
+iptables -P  OUTPUT DROP
+iptables -P FORWARD DROP
+
+# IPv6
+ip6tables -P   INPUT DROP
+ip6tables -P  OUTPUT DROP
+ip6tables -P FORWARD DROP
