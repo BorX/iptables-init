@@ -3,6 +3,6 @@
 [ -n "$TRUSTED_ICMP" ] && isIpsetInstalled && {
 	ipset create icmp -exist hash:net family inet hashsize 16384 maxelem 10; ipset flush icmp
 	for source in $TRUSTED_ICMP; do ipset add -exist icmp $source; done
-	iptables -m comment --comment "ICMP        " -i $NTWK_INTFCE -A  INPUT -p icmp -m set --match-set icmp src -j ACCEPT
-	iptables -m comment --comment "ICMP        " -o $NTWK_INTFCE -A OUTPUT -p icmp -m set --match-set icmp dst -j ACCEPT
+	iptables -m comment --comment "ICMP        " -i $NTWK_INTFCE $actFlg  INPUT -p icmp -m set --match-set icmp src -j ACCEPT
+	iptables -m comment --comment "ICMP        " -o $NTWK_INTFCE $actFlg OUTPUT -p icmp -m set --match-set icmp dst -j ACCEPT
 }

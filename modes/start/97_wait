@@ -1,1 +1,6 @@
-../../rules/wait
+#!/usr/bin/env bash
+
+echo
+echo "La configuration sera annulée dans 60 secondes."
+echo "Appuyer sur CTRL-C pour l'appliquer définitivement..."
+sleep 60

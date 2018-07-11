@@ -23,9 +23,12 @@ do_monitor() {
 usage() {
 	cat <<EOF
 usages:
+$0 status
+$0 modes
+$0 [ -f | --file ConfFile ] [ -q | --quiet ] [ --network-interface iface ] [ --trusted-list '@ip [ ... ]' ] [ --trusted-icmp '@ip [ ... ]' ] mode mode
+$0 rules
+$0 [ -f | --file ConfFile ] [ -q | --quiet ] [ --network-interface iface ] [ --trusted-list '@ip [ ... ]' ] [ --trusted-icmp '@ip [ ... ]' ]  add | del  rule [ ... ]
 $0 [ -h | --help ]
-$0 [ -f | --file ConfFile ] [ -q | --quiet ] [ --network-interface iface ] [ --trusted-list '@ip [ ... ]' ] [ --trusted-icmp '@ip [ ... ]' ] mode
-$0 list
 EOF
 }
 
@@ -78,21 +81,38 @@ done
 
 
 ###############################################################################
-# Mode
+# Args : list, rule or mode
 
-[ -n "$1" ] || { usage >&2 ; exit 1 ; }
-
-[ "$1" == 'list' ] && {
+do_list_modes() {
+	local rc="$1"
 	find "$ROOT_DIR/modes" -follow | sort | sed "s,$ROOT_DIR/modes,,;/^$/d;s,[^/]*/,|   ,g;s,| *\([^| ]\),+- \1,"
-	exit 0
+	exit $rc
 }
 
-[ -d "$ROOT_DIR/modes/$1" ] || exit 2
+do_list_rules() {
+	local rc="$1"
+	ls -1 "$ROOT_DIR/rules"
+	exit $rc
+}
 
+do_load_rule() {
+	local action="$1"
+	[ "$action" == 'add' ] && local actFlg='-A'
+	[ "$action" == 'del' ] && local actFlg='-D'
+
+	shift
+	for rule in $@; do
+		local ruleFile="$ROOT_DIR/rules/$rule"
+		[ -f "$ruleFile" ] || do_list_rules 1
+
+		source "$ruleFile"
+	done
+}
 
 do_load_mode() {
 	local modeDir="$1"
 
+	[ -d "$modeDir" ] || do_list_modes 1
 	for addons in "$modeDir"/*; do
 		if [ -f "$addons" ]; then
 			source "$addons"
@@ -102,5 +122,13 @@ do_load_mode() {
 	done
 }
 
-do_load_mode "$ROOT_DIR/modes/$1"
+case "$1" in
+	add|del) do_load_rule "$@" ;;
+	mode)    [ -n "$2" ] || { usage >&2 ; exit 1 ; }
+           do_load_mode "$ROOT_DIR/modes/$2" ;;
+	status)  do_load_mode "$ROOT_DIR/modes/status" ;;
+	modes)   do_list_modes 0 ;;
+	rules)   do_list_rules 0 ;;
+	*)       usage >&2 ; exit 1 ;;
+esac
 

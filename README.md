@@ -1,3 +1,465 @@
+iptables-init v5
+================
+
+- All tables management (security, raw, mangle, nat, filter)
+- Management by modes (customizable)
+- Easy loading of pre-configured rules
+- Efficient Blacklists : Static blacklist refreshed everyday from internet + Live blacklist from abusing attempts
+
+
+```
+# /etc/iptables/init/init
+usages:
+/etc/iptables/init/init status
+/etc/iptables/init/init modes
+/etc/iptables/init/init [ -f | --file ConfFile ] [ -q | --quiet ] [ --network-interface iface ] [ --trusted-list '@ip [ ... ]' ] [ --trusted-icmp '@ip [ ... ]' ] mode mode
+/etc/iptables/init/init rules
+/etc/iptables/init/init [ -f | --file ConfFile ] [ -q | --quiet ] [ --network-interface iface ] [ --trusted-list '@ip [ ... ]' ] [ --trusted-icmp '@ip [ ... ]' ]  add | del  rule [ ... ]
+/etc/iptables/init/init [ -h | --help ]
+```
+```
+# /etc/iptables/init/blacklistctl
+usages:
+/etc/iptables/init/blacklistctl update | preparecrontab
+/etc/iptables/init/blacklistctl bladd @ip [ @ip [ ... ] ]
+```
+
+Blacklists
+----------
+
+### Static
+Inspired by [trick77/ipset-blacklist](https://github.com/trick77/ipset-blacklist).  
+The blacklist is refreshed from sets of blacklists downloaded from the internet.  
+```
+# /etc/iptables/init/blacklistctl update
+Blacklist refreshed in 52 seconds. 107459 -> 111157 (+3698)
+```
+
+### Live
+4 bad attempts in 10 minutes -> @IP blocked by 'raw' table
+#### Table raw - Chain PREROUTING
+```
+target     prot opt in     out     source               destination         
+DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* BlackListLive */ match-set blacklist-live src,dst
+DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* BlackList     */ match-set blacklist src,dst
+```
+
+#### Table filter - Chain INPUT
+```
+target     prot opt in     out     source               destination         
+           all  --  *      *       0.0.0.0/0            0.0.0.0/0            recent: SET name: blacklist side: source mask: 255.255.255.255
+BLACKLIST  all  --  *      *       0.0.0.0/0            0.0.0.0/0            recent: UPDATE seconds: 600 hit_count: 4 name: blacklist side: source mask: 255.255.255.255
+```
+
+#### Table filter - Chain BLACKLIST
+```
+target     prot opt in     out     source               destination         
+RETURN     all  --  *      *       0.0.0.0/0            0.0.0.0/0            match-set trustedLst src,dst recent: REMOVE name: blacklist side: source mask: 255.255.255.255
+LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0            LOG flags 0 level 4 prefix "      [BLACKLIST] "
+SET        all  --  *      *       0.0.0.0/0            0.0.0.0/0            add-set blacklist-live src
+```
+
+
+Modes
+-----
+```
+# /etc/iptables/init/init modes
++- clear
+|   +- 00_clear
+|   +- 99_status
+|   |   +- 00_status
++- start
+|   +- 00_clear
+|   |   +- 00_clear
+|   |   +- 99_status
+|   |   |   +- 00_status
+|   +- 04_local
+|   +- 05_split-tcp-upd
+|   +- 10_rules-default-action
+|   +- 11_in-ssh
+|   +- 11_out-dns
+|   +- 11_out-http
+|   +- 11_out-https
+|   +- 11_out-ntp
+|   +- 11_out-smtp
+|   +- 11_out-ssh
+|   +- 11_out-whois
+|   +- 30_icmp
+|   +- 70_logging
+|   +- 81_security
+|   +- 84_blacklist
+|   +- 87_default-policies
+|   +- 96_status
+|   |   +- 00_status
+|   +- 97_wait
+|   +- 98_clear
+|   |   +- 00_clear
+|   |   +- 99_status
+|   |   |   +- 00_status
++- status
+|   +- 00_status
+```
+
+### Mode 'status'
+- Just calls one script (step 00)
+
+### Mode 'clear'
+- Calls one script (step 00)
+- Invokes mode 'status' (step 99)
+
+### Mode 'start'
+- Invokes, at step 00, mode 'clear' (including mode 'status')
+- Executes different scripts
+- Invokes, at step 96, mode 'status'
+- Executes, a step 97, a "wait" script (60 seconds to press Ctrl+c before a new invoke of mode 'clear', to prevent connection blocking)
+
+### Mode configuration
+
+#### How mode 'start' is configured ?
+```
+# ls -la /etc/iptables/init/modes/clear/
+total 12
+drwx------ 2 root root 4096 juil.  6 18:48 ./
+drwx------ 7 root root 4096 juil.  6 11:27 ../
+-rw------- 1 root root 1373 juil.  6 17:58 00_clear
+lrwxrwxrwx 1 root root    9 juil.  6 11:55 99_status -> ../status/
+```
+
+#### How mode 'start' is configured ?
+```
+# ls -la /etc/iptables/init/modes/start/
+total 48
+drwx------ 2 root root 4096 juil. 10 18:14 ./
+drwx------ 7 root root 4096 juil.  6 11:27 ../
+lrwxrwxrwx 1 root root    8 juil.  6 14:22 00_clear -> ../clear/
+-rw------- 1 root root  164 juil.  6 18:31 04_local
+-rw------- 1 root root  383 juil.  6 15:21 05_split-tcp-upd
+-rw------- 1 root root   47 juil. 10 15:29 10_rules-default-action
+lrwxrwxrwx 1 root root   18 juil.  6 14:48 11_in-ssh -> ../../rules/in-ssh
+lrwxrwxrwx 1 root root   19 juil.  6 14:48 11_out-dns -> ../../rules/out-dns
+lrwxrwxrwx 1 root root   20 juil.  6 14:48 11_out-http -> ../../rules/out-http
+lrwxrwxrwx 1 root root   21 juil.  6 14:48 11_out-https -> ../../rules/out-https
+lrwxrwxrwx 1 root root   19 juil.  6 14:48 11_out-ntp -> ../../rules/out-ntp
+lrwxrwxrwx 1 root root   20 juil.  6 14:48 11_out-smtp -> ../../rules/out-smtp
+lrwxrwxrwx 1 root root   19 juil.  6 14:48 11_out-ssh -> ../../rules/out-ssh
+lrwxrwxrwx 1 root root   21 juil.  6 14:48 11_out-whois -> ../../rules/out-whois
+lrwxrwxrwx 1 root root   16 juil.  6 17:44 30_icmp -> ../../rules/icmp
+-rw------- 1 root root  558 juin   8 18:02 70_logging
+-rw------- 1 root root  807 juin   8 15:35 81_security
+-rw------- 1 root root 1106 juil.  6 00:37 84_blacklist
+-rw------- 1 root root  188 juil.  6 15:21 87_default-policies
+lrwxrwxrwx 1 root root    9 juil.  6 14:23 96_status -> ../status/
+-rw------- 1 root root  153 juil.  6 15:30 97_wait
+lrwxrwxrwx 1 root root    8 juil.  6 15:28 98_clear -> ../clear/
+```
+
+It's easy to change this mode or to create a new mode
+```
+cp -a /etc/iptables/init/modes/start/ /etc/iptables/init/modes/new_mode/
+```
+
+
+Rules
+-----
+```
+# /etc/iptables/init/init rules
+icmp
+in-ssh
+out-dns
+out-http
+out-https
+out-ntp
+out-smtp
+out-ssh
+out-whois
+```
+
+```
+# /etc/iptables/init/init del out-ssh
+# /etc/iptables/init/init add out-ssh
+```
+
+
+Status
+-----
+In mode 'clear'
+```
+# /etc/iptables/init/init status
+================================= ip6tables security =================================
+Chain INPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+================================= ip6tables      raw =================================
+Chain PREROUTING (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+================================= ip6tables   mangle =================================
+Chain PREROUTING (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain INPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain POSTROUTING (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+================================= ip6tables      nat =================================
+Chain PREROUTING (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain INPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain POSTROUTING (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+================================= ip6tables   filter =================================
+Chain INPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+================================= iptables  security =================================
+Chain INPUT (policy ACCEPT 1 packets, 52 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+================================= iptables       raw =================================
+Chain PREROUTING (policy ACCEPT 1 packets, 52 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+================================= iptables    mangle =================================
+Chain PREROUTING (policy ACCEPT 1 packets, 52 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain INPUT (policy ACCEPT 1 packets, 52 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain POSTROUTING (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+================================= iptables       nat =================================
+Chain PREROUTING (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain INPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain POSTROUTING (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+================================= iptables    filter =================================
+Chain INPUT (policy ACCEPT 1 packets, 52 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+```
+
+In mode 'start'
+```
+# /etc/iptables/init/init status
+================================= ip6tables security =================================
+Chain INPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+================================= ip6tables      raw =================================
+Chain PREROUTING (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+================================= ip6tables   mangle =================================
+Chain PREROUTING (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain INPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain POSTROUTING (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+================================= ip6tables      nat =================================
+Chain PREROUTING (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain INPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain POSTROUTING (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+================================= ip6tables   filter =================================
+Chain INPUT (policy DROP 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain FORWARD (policy DROP 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy DROP 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+================================= iptables  security =================================
+Chain INPUT (policy ACCEPT 163 packets, 15972 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 140 packets, 28797 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+================================= iptables       raw =================================
+Chain PREROUTING (policy ACCEPT 163 packets, 15972 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+    8   256 DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* BlackListLive */ match-set blacklist-live src,dst
+    0     0 DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* BlackList     */ match-set blacklist src,dst
+
+Chain OUTPUT (policy ACCEPT 140 packets, 28797 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+================================= iptables    mangle =================================
+Chain PREROUTING (policy ACCEPT 163 packets, 15972 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain INPUT (policy ACCEPT 163 packets, 15972 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain FORWARD (policy ACCEPT 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 140 packets, 28797 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain POSTROUTING (policy ACCEPT 140 packets, 28797 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+================================= iptables       nat =================================
+Chain PREROUTING (policy ACCEPT 1 packets, 60 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain INPUT (policy ACCEPT 1 packets, 60 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain OUTPUT (policy ACCEPT 16 packets, 1109 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+
+Chain POSTROUTING (policy ACCEPT 16 packets, 1109 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+================================= iptables    filter =================================
+Chain INPUT (policy DROP 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+    0     0 DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* No multicast */ PKTTYPE = multicast
+    0     0 DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* No broadcast */ PKTTYPE = broadcast
+    0     0 ACCEPT     all  --  lo     *       0.0.0.0/0            0.0.0.0/0            /* Local        */
+  148 14280 TCP_IN     tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            /* Split TCP    */
+   15  1692 UDP_IN     udp  --  *      *       0.0.0.0/0            0.0.0.0/0            /* Split UDP    */
+    0     0 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* Logs         */ LOG flags 0 level 4 prefix "  [INPUT DROPPED] "
+    0     0            all  --  *      *       0.0.0.0/0            0.0.0.0/0            recent: SET name: blacklist side: source mask: 255.255.255.255
+    0     0 BLACKLIST  all  --  *      *       0.0.0.0/0            0.0.0.0/0            recent: UPDATE seconds: 600 hit_count: 4 name: blacklist side: source mask: 255.255.255.255
+
+Chain FORWARD (policy DROP 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+    0     0 DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* No multicast */ PKTTYPE = multicast
+    0     0 DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* No broadcast */ PKTTYPE = broadcast
+    0     0 DROP       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            /* Scans Xmas and Null */ tcp flags:0x06/0x06
+    0     0 DROP       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            /* Scans Xmas and Null */ tcp flags:0x3F/0x00
+    0     0 DROP       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            /* Scans Xmas and Null */ tcp flags:0x3F/0x3F
+    0     0 DROP       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            /* Scans Xmas and Null */ tcp flags:0x29/0x29
+    0     0 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* Logs         */ LOG flags 0 level 4 prefix "[FORWARD DROPPED] "
+
+Chain OUTPUT (policy DROP 0 packets, 0 bytes)
+ pkts bytes target     prot opt in     out     source               destination         
+    0     0 DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* BlackListLive */ match-set blacklist-live src,dst
+    0     0 DROP       all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* BlackList     */ match-set blacklist src,dst
+    0     0 ACCEPT     all  --  *      lo      0.0.0.0/0            0.0.0.0/0            /* Local        */
+  125 27748 TCP_OUT    tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            /* Split TCP    */
+   15  1049 UDP_OUT    udp  --  *      *       0.0.0.0/0            0.0.0.0/0            /* Split UDP    */
+    0     0 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0            /* Logs         */ LOG flags 0 level 4 prefix " [OUTPUT DROPPED] "
+
+Chain BLACKLIST (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+    0     0 RETURN     all  --  *      *       0.0.0.0/0            0.0.0.0/0            match-set trustedLst src,dst recent: REMOVE name: blacklist side: source mask: 255.255.255.255
+    0     0 LOG        all  --  *      *       0.0.0.0/0            0.0.0.0/0            LOG flags 0 level 4 prefix "      [BLACKLIST] "
+    0     0 SET        all  --  *      *       0.0.0.0/0            0.0.0.0/0            add-set blacklist-live src
+
+Chain TCP_IN (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+    0     0 DROP       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            /* Scans Xmas and Null */ tcp flags:0x06/0x06
+    0     0 DROP       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            /* Scans Xmas and Null */ tcp flags:0x3F/0x00
+    0     0 DROP       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            /* Scans Xmas and Null */ tcp flags:0x3F/0x3F
+    0     0 DROP       tcp  --  *      *       0.0.0.0/0            0.0.0.0/0            /* Scans Xmas and Null */ tcp flags:0x29/0x29
+  127  8949 ACCEPT     tcp  --  eth0   *       0.0.0.0/0            0.0.0.0/0            /*  IN SSH             */ ctstate NEW,ESTABLISHED tcp dpt:443 match-set trustedLst src
+    0     0 ACCEPT     tcp  --  eth0   *       0.0.0.0/0            0.0.0.0/0            /* OUT HTTP            */ ctstate ESTABLISHED tcp spt:80
+    0     0 ACCEPT     tcp  --  eth0   *       0.0.0.0/0            0.0.0.0/0            /* OUT HTTPS           */ ctstate ESTABLISHED tcp spt:443
+   21  5331 ACCEPT     tcp  --  eth0   *       0.0.0.0/0            0.0.0.0/0            /* OUT SMTP            */ ctstate ESTABLISHED tcp spt:25
+    0     0 ACCEPT     tcp  --  eth0   *       0.0.0.0/0            0.0.0.0/0            /* OUT SSH             */ ctstate ESTABLISHED tcp spt:22
+    0     0 ACCEPT     tcp  --  eth0   *       0.0.0.0/0            0.0.0.0/0            /* OUT Whois           */ ctstate ESTABLISHED tcp spt:43
+    0     0 ACCEPT     tcp  --  eth0   *       0.0.0.0/0            0.0.0.0/0            /* OUT Whois           */ ctstate ESTABLISHED tcp spt:4321
+
+Chain TCP_OUT (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+  104 15371 ACCEPT     tcp  --  *      eth0    0.0.0.0/0            0.0.0.0/0            /*  IN SSH             */ ctstate ESTABLISHED tcp spt:443 match-set trustedLst dst
+    0     0 ACCEPT     tcp  --  *      eth0    0.0.0.0/0            0.0.0.0/0            /* OUT HTTP            */ ctstate NEW,ESTABLISHED tcp dpt:80
+    0     0 ACCEPT     tcp  --  *      eth0    0.0.0.0/0            0.0.0.0/0            /* OUT HTTPS           */ ctstate NEW,ESTABLISHED tcp dpt:443
+   21 12377 ACCEPT     tcp  --  *      eth0    0.0.0.0/0            0.0.0.0/0            /* OUT SMTP            */ ctstate NEW,ESTABLISHED tcp dpt:25
+    0     0 ACCEPT     tcp  --  *      eth0    0.0.0.0/0            0.0.0.0/0            /* OUT SSH             */ ctstate NEW,ESTABLISHED tcp dpt:22
+    0     0 ACCEPT     tcp  --  *      eth0    0.0.0.0/0            0.0.0.0/0            /* OUT Whois           */ ctstate NEW,ESTABLISHED tcp dpt:43
+    0     0 ACCEPT     tcp  --  *      eth0    0.0.0.0/0            0.0.0.0/0            /* OUT Whois           */ ctstate NEW,ESTABLISHED tcp dpt:4321
+
+Chain UDP_IN (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+   15  1692 ACCEPT     udp  --  eth0   *       0.0.0.0/0            0.0.0.0/0            /* OUT DNS             */ ctstate ESTABLISHED udp spt:53
+    0     0 ACCEPT     udp  --  eth0   *       0.0.0.0/0            0.0.0.0/0            /* OUT NTP             */ ctstate ESTABLISHED udp spt:123
+
+Chain UDP_OUT (1 references)
+ pkts bytes target     prot opt in     out     source               destination         
+   15  1049 ACCEPT     udp  --  *      eth0    0.0.0.0/0            0.0.0.0/0            /* OUT DNS             */ ctstate NEW,ESTABLISHED udp dpt:53
+    0     0 ACCEPT     udp  --  *      eth0    0.0.0.0/0            0.0.0.0/0            /* OUT NTP             */ ctstate NEW,ESTABLISHED udp dpt:123
+```
+
+
 iptables-init v4
 ================
 
