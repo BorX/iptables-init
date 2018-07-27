@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 isIpsetInstalled && {
-	ipset list -n | grep -q blacklist$ || do_blacklist_update
+	ipset list -n | grep -q blacklist$ || "$ROOT_DIR/blacklistctl" update
 	ipset create blacklist-live -exist hash:net family inet hashsize 16384 maxelem 16384
 
 	iptables --table raw    -m comment --comment "BlackListLive" -I PREROUTING 1 -m set --match-set blacklist-live src,dst -j DROP
@@ -10,11 +10,18 @@ isIpsetInstalled && {
 	iptables --table filter -m comment --comment "BlackListLive" -I OUTPUT     1 -m set --match-set blacklist-live src,dst -j DROP
 	iptables --table filter -m comment --comment "BlackList    " -I OUTPUT     2 -m set --match-set blacklist      src,dst -j DROP
 
+
 	iptables -N BLACKLIST
-	iptables -A BLACKLIST -m set --match-set trustedLst src,dst -m recent --name blacklist --remove -j RETURN
+
+	iptables -A BLACKLIST -m set --match-set trustedLst src,dst -j DROP
+
+	iptables -A BLACKLIST -m recent --name blacklist   --set
+	iptables -A BLACKLIST -m recent --name blacklist ! --rcheck --seconds 600 --hitcount 4 -j DROP
+
 	iptables -A BLACKLIST -j LOG --log-prefix '      [BLACKLIST] '
 	iptables -A BLACKLIST -j SET --add-set blacklist-live src
+	iptables -A BLACKLIST -j DROP
 
-	iptables -A INPUT -m recent --name blacklist --set
-	iptables -A INPUT -m recent --name blacklist --update --seconds 600 --hitcount 4 -j BLACKLIST
+
+	iptables -A INPUT -j BLACKLIST
 }
