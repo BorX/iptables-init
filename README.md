@@ -28,12 +28,31 @@ Blacklists
 ----------
 
 ### Static
-Inspired by [trick77/ipset-blacklist](https://github.com/trick77/ipset-blacklist).  
-The blacklist is refreshed from sets of blacklists downloaded from the internet.  
+Inspired by [trick77/ipset-blacklist](https://github.com/trick77/ipset-blacklist).
+The blacklist is refreshed from sets of blacklists downloaded from the internet.
+#### Manual
 ```
 # /etc/iptables/init/blacklistctl update
 Blacklist refreshed in 52 seconds. 107459 -> 111157 (+3698)
 ```
+#### Crontab
+```
+# /etc/iptables/init/blacklistctl preparecrontab
+```
+This will add this comment in crontab and will edit it:
+```
+#00 07 * * * /etc/iptables/init/blacklistctl update
+```
+Just uncomment it and blacklist will be refreshed every morning:
+```
+Date: Mon, 16 Jul 2018 07:00:52 +0200
+From: Cron Daemon <root@myserver>
+To: root@myserver
+Subject: Cron <root@myserver> /etc/iptables/init/blacklistctl update
+
+Blacklist refreshed in 51 seconds. 135419 -> 141886 (+6467)
+```
+
 
 ### Live
 4 bad attempts in 10 minutes -> @IP blocked by 'raw' table
