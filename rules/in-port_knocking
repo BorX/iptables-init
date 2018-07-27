@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+[ "$action" == 'add' ] && {
+	iptables -N knock1
+	iptables -A knock1 -m recent --set    --name knock1 --rsource -j DROP
+
+	iptables -N knock2
+	iptables -A knock2 -m recent --remove --name knock1 --rsource
+	iptables -A knock2 -m recent --set    --name knock2 --rsource -j DROP
+
+	iptables -N knock3
+	iptables -A knock3 -m recent --remove --name knock2 --rsource
+	iptables -A knock3 -m recent --set    --name knock3 --rsource -j DROP
+
+	iptables -N knock4
+	iptables -A knock4 -m recent --remove --name knock3 --rsource
+	iptables -A knock4 -j LOG --log-prefix '[GRANTED] '
+	iptables -A knock4 -j SET --del-set blacklist-live src
+	iptables -A knock4 -j SET --add-set     trustedLst src
+	iptables -A knock4 -j DROP
+
+	#iptables -N knock5
+	#iptables -A knock5 -m recent --remove --name knock4 --rsource -j ACCEPT
+}
+
+iptables -m comment --comment " IN PORT-KNOCKING  " $actFlg TCP_IN  -i $NTWK_INTFCE -m conntrack --ctstate NEW             -p tcp --dport ${PK_PORTS[0]}                                                         -j knock1
+iptables -m comment --comment " IN PORT-KNOCKING  " $actFlg TCP_IN  -i $NTWK_INTFCE -m conntrack --ctstate NEW             -p tcp --dport ${PK_PORTS[1]} -m recent --seconds 3  --rcheck --name knock1 --rsource -j knock2
+iptables -m comment --comment " IN PORT-KNOCKING  " $actFlg TCP_IN  -i $NTWK_INTFCE -m conntrack --ctstate NEW             -p tcp --dport ${PK_PORTS[2]} -m recent --seconds 3  --rcheck --name knock2 --rsource -j knock3
+iptables -m comment --comment " IN PORT-KNOCKING  " $actFlg TCP_IN  -i $NTWK_INTFCE -m conntrack --ctstate NEW             -p tcp --dport ${PK_PORTS[3]} -m recent --seconds 3  --rcheck --name knock3 --rsource -j knock4
+#iptables -m comment --comment " IN SSH            " $actFlg TCP_IN  -i $NTWK_INTFCE -m conntrack --ctstate NEW,ESTABLISHED -p tcp --dport   443 -m recent --seconds 10 --update --name knock4 --rsource -j ACCEPT
+#iptables -m comment --comment " IN SSH            " $actFlg TCP_OUT -o $NTWK_INTFCE -m conntrack --ctstate     ESTABLISHED -p tcp --sport   443                                                         -j ACCEPT
+
+[ "$action" == 'del' ] && {
+	for i in {1..4}; do
+		iptables -F knock$i
+		iptables -X knock$i
+	done
+}
+
