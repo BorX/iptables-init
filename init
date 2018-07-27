@@ -125,8 +125,9 @@ do_load_mode() {
 case "$1" in
 	add|del) do_load_rule "$@" ;;
 	mode)    [ -n "$2" ] || { usage >&2 ; exit 1 ; }
-           do_load_mode "$ROOT_DIR/modes/$2" ;;
+           do_load_mode "$ROOT_DIR/modes/$2"     ;;
 	status)  do_load_mode "$ROOT_DIR/modes/status" ;;
+	zero)    do_load_mode "$ROOT_DIR/modes/zero"   ;;
 	modes)   do_list_modes 0 ;;
 	rules)   do_list_rules 0 ;;
 	*)       usage >&2 ; exit 1 ;;
