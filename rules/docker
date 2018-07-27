@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+iptables -F DOCKER-USER
+
+[ "$action" == 'del' ] && {
+	iptables -m comment --comment "OUT Docker  " -D OUTPUT -o docker0 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
+	iptables -m comment --comment "OUT Docker  " -D  INPUT -i docker0 -m conntrack --ctstate     ESTABLISHED -j ACCEPT
+
+	iptables -m comment --comment "Deny Docker " -A DOCKER-USER -j DROP
+}
+
+[ "$action" == 'add' ] && {
+	position=$(iptables --table filter -nvL OUTPUT --line-number | awk '/Local/ { print $1 }')
+	iptables -m comment --comment "OUT Docker  " -I OUTPUT $position -o docker0 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
+
+	position=$(iptables --table filter -nvL  INPUT --line-number | awk '/Local/ { print $1 }')
+	iptables -m comment --comment "OUT Docker  " -I  INPUT $position -i docker0 -m conntrack --ctstate     ESTABLISHED -j ACCEPT
+
+
+	iptables -m comment --comment "Into Docker " -A DOCKER-USER -i docker0 -o docker0 -j RETURN
+	iptables -m comment --comment "  To Docker " -A DOCKER-USER -o docker0 -m set --match-set trustedLst src -j RETURN
+	iptables -m comment --comment "From Docker " -A DOCKER-USER -i docker0 -m set --match-set trustedLst dst -j RETURN
+
+	iptables -m comment --comment "Into Docker " -A DOCKER-USER -i docker0 -j LOG --log-prefix "[  A VERIF      ] "
+	iptables -m comment --comment "Into Docker " -A DOCKER-USER -i docker0 -j RETURN
+
+	iptables -m comment --comment "Logs        " -A DOCKER-USER -j LOG --log-prefix " [DOCKER DROPPED] "
+	iptables -m comment --comment "Deny Docker " -A DOCKER-USER -j BLACKLIST
+}
+

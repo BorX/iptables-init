@@ -21,7 +21,7 @@ for table in security raw mangle; do
 	iptables --table $table -X
 done
 
-keepDocker=false
+keepDocker=true
 if $keepDocker; then
 	# Flush all chains but FORWARD and docker chains
 	iptables -nL | sed -n 's/^Chain \([^ ]*\) .*/\1/p' | grep -vi docker | grep -v '^FORWARD$'                   | xargs -rn1 iptables -F
