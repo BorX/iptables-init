@@ -2,7 +2,7 @@ iptables-init v5
 ================
 
 - All tables management (security, raw, mangle, nat, filter)
-- Management by modes (customizable)
+- Management by profiles (customizable)
 - Easy loading of pre-configured rules
 - Efficient Blacklists : Static blacklist refreshed everyday from internet + Live blacklist from abusing attempts
 
@@ -11,8 +11,8 @@ iptables-init v5
 # /etc/iptables/init/init
 usages:
 /etc/iptables/init/init status
-/etc/iptables/init/init modes
-/etc/iptables/init/init [ -f | --file ConfFile ] [ -q | --quiet ] [ --network-interface iface ] [ --trusted-list '@ip [ ... ]' ] [ --trusted-icmp '@ip [ ... ]' ] mode mode
+/etc/iptables/init/init profiles
+/etc/iptables/init/init [ -f | --file ConfFile ] [ -q | --quiet ] [ --network-interface iface ] [ --trusted-list '@ip [ ... ]' ] [ --trusted-icmp '@ip [ ... ]' ] profile profilename
 /etc/iptables/init/init rules
 /etc/iptables/init/init [ -f | --file ConfFile ] [ -q | --quiet ] [ --network-interface iface ] [ --trusted-list '@ip [ ... ]' ] [ --trusted-icmp '@ip [ ... ]' ]  add | del  rule [ ... ]
 /etc/iptables/init/init [ -h | --help ]
@@ -79,10 +79,10 @@ SET        all  --  *      *       0.0.0.0/0            0.0.0.0/0            add
 ```
 
 
-Modes
+Profiles
 -----
 ```
-# /etc/iptables/init/init modes
+# /etc/iptables/init/init profiles
 +- clear
 |   +- 00_clear
 |   +- 99_status
@@ -119,24 +119,24 @@ Modes
 |   +- 00_status
 ```
 
-### Mode 'status'
+### Profile 'status'
 - Just calls one script (step 00)
 
-### Mode 'clear'
+### Profile 'clear'
 - Calls one script (step 00)
-- Invokes mode 'status' (step 99)
+- Invokes profile 'status' (step 99)
 
-### Mode 'start'
-- Invokes, at step 00, mode 'clear' (including mode 'status')
+### Profile 'start'
+- Invokes, at step 00, profile 'clear' (including profile 'status')
 - Executes different scripts
-- Invokes, at step 96, mode 'status'
-- Executes, a step 97, a "wait" script (60 seconds to press Ctrl+c before a new invoke of mode 'clear', to prevent connection blocking)
+- Invokes, at step 96, profile 'status'
+- Executes, a step 97, a "wait" script (60 seconds to press Ctrl+c before a new invoke of profile 'clear', to prevent connection blocking)
 
-### Mode configuration
+### Profile configuration
 
-#### How mode 'start' is configured ?
+#### How profile 'start' is configured ?
 ```
-# ls -la /etc/iptables/init/modes/clear/
+# ls -la /etc/iptables/init/profiles/clear/
 total 12
 drwx------ 2 root root 4096 juil.  6 18:48 ./
 drwx------ 7 root root 4096 juil.  6 11:27 ../
@@ -144,9 +144,9 @@ drwx------ 7 root root 4096 juil.  6 11:27 ../
 lrwxrwxrwx 1 root root    9 juil.  6 11:55 99_status -> ../status/
 ```
 
-#### How mode 'start' is configured ?
+#### How profile 'start' is configured ?
 ```
-# ls -la /etc/iptables/init/modes/start/
+# ls -la /etc/iptables/init/profiles/start/
 total 48
 drwx------ 2 root root 4096 juil. 10 18:14 ./
 drwx------ 7 root root 4096 juil.  6 11:27 ../
@@ -172,9 +172,9 @@ lrwxrwxrwx 1 root root    9 juil.  6 14:23 96_status -> ../status/
 lrwxrwxrwx 1 root root    8 juil.  6 15:28 98_clear -> ../clear/
 ```
 
-It's easy to change this mode or to create a new mode
+It's easy to change this profile or to create a new profile
 ```
-cp -a /etc/iptables/init/modes/start/ /etc/iptables/init/modes/new_mode/
+cp -a /etc/iptables/init/profiles/start/ /etc/iptables/init/profiles/new_profile/
 ```
 
 
@@ -201,7 +201,7 @@ out-whois
 
 Status
 -----
-In mode 'clear'
+In profile 'clear'
 ```
 # /etc/iptables/init/init status
 ================================= ip6tables security =================================
@@ -308,7 +308,7 @@ Chain OUTPUT (policy ACCEPT 0 packets, 0 bytes)
  pkts bytes target     prot opt in     out     source               destination         
 ```
 
-In mode 'start'
+In profile 'start'
 ```
 # /etc/iptables/init/init status
 ================================= ip6tables security =================================

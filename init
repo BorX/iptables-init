@@ -24,8 +24,8 @@ usage() {
 	cat <<EOF
 usages:
 $0 status
-$0 modes
-$0 [ -f | --file ConfFile ] [ -q | --quiet ] [ --network-interface iface ] [ --trusted-list '@ip [ ... ]' ] [ --trusted-icmp '@ip [ ... ]' ] mode mode
+$0 profiles
+$0 [ -f | --file ConfFile ] [ -q | --quiet ] [ --network-interface iface ] [ --trusted-list '@ip [ ... ]' ] [ --trusted-icmp '@ip [ ... ]' ] profile profilename
 $0 rules
 $0 [ -f | --file ConfFile ] [ -q | --quiet ] [ --network-interface iface ] [ --trusted-list '@ip [ ... ]' ] [ --trusted-icmp '@ip [ ... ]' ]  add | del  rule [ ... ]
 $0 [ -h | --help ]
@@ -81,18 +81,18 @@ done
 
 
 ###############################################################################
-# Args : list, rule or mode
+# Args : list, rule or profile
 
-do_list_modes() {
+do_list_profiles() {
 	local rc="$1"
-	find "$ROOT_DIR/modes" -follow | sort | sed "s,$ROOT_DIR/modes,,;/^$/d;s,[^/]*/,|   ,g;s,| *\([^| ]\),+- \1,"
-	exit $rc
+	find "$ROOT_DIR/profiles" -follow | sort | sed "s,$ROOT_DIR/profiles,,;/^$/d;s,[^/]*/,|   ,g;s,| *\([^| ]\),+- \1,"
+	[ -z "$rc" ] && exit 0 || exit $rc
 }
 
 do_list_rules() {
 	local rc="$1"
 	ls -1 "$ROOT_DIR/rules"
-	exit $rc
+	[ -z "$rc" ] && exit 0 || exit $rc
 }
 
 do_load_rule() {
@@ -109,27 +109,27 @@ do_load_rule() {
 	done
 }
 
-do_load_mode() {
-	local modeDir="$1"
+do_load_profile() {
+	local profileDir="$1"
 
-	[ -d "$modeDir" ] || do_list_modes 1
-	for addons in "$modeDir"/*; do
+	[ -d "$profileDir" ] || do_list_profiles 1
+	for addons in "$profileDir"/*; do
 		if [ -f "$addons" ]; then
 			source "$addons"
 		else
-			do_load_mode "$addons"
+			do_load_profile "$addons"
 		fi
 	done
 }
 
 case "$1" in
 	add|del) do_load_rule "$@" ;;
-	mode)    [ -n "$2" ] || { usage >&2 ; exit 1 ; }
-           do_load_mode "$ROOT_DIR/modes/$2"     ;;
-	status)  do_load_mode "$ROOT_DIR/modes/status" ;;
-	zero)    do_load_mode "$ROOT_DIR/modes/zero"   ;;
-	modes)   do_list_modes 0 ;;
-	rules)   do_list_rules 0 ;;
-	*)       usage >&2 ; exit 1 ;;
+	profile)  [ -n "$2" ] || { usage >&2 ; exit 1 ; }
+            do_load_profile "$ROOT_DIR/profiles/$2"     ;;
+	status)   do_load_profile "$ROOT_DIR/profiles/status" ;;
+	zero)     do_load_profile "$ROOT_DIR/profiles/zero"   ;;
+	profiles) do_list_profiles ;;
+	rules)    do_list_rules    ;;
+	*)        usage >&2 ; exit 1 ;;
 esac
 
