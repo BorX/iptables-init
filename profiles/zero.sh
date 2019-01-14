@@ -5,3 +5,5 @@ for command in ip6tables iptables; do
 		$command --table $table --zero
 	done
 done
+
+source "$PROFILES_DIR/status.sh"

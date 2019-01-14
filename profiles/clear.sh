@@ -37,3 +37,5 @@ else
 		iptables --table $table -X
 	done
 fi
+
+source "$PROFILES_DIR/status.sh"
