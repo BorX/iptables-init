@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-
-action='add'
-actFlg='-A'
-

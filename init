@@ -2,7 +2,7 @@
 
 ROOT_DIR="$(cd "$(dirname "$0")"; pwd)"
 PROFILES_DIR="$ROOT_DIR/profiles"
-RULES_DIR="$ROOT_DIR/rules"
+MODULES_DIR="$ROOT_DIR/modules"
 PATH=/sbin:$PATH
 
 
@@ -45,9 +45,9 @@ $0 clear
 $0 start
 $0 status
 $0 zero
-$0 [ -f | --file ConfFile ] [ -q | --quiet ] [ --network-interface iface ] [ --trusted-list '@ip [ ... ]' ] [ --trusted-icmp '@ip [ ... ]' ] profile profilename
-$0 rules
-$0 [ -f | --file ConfFile ] [ -q | --quiet ] [ --network-interface iface ] [ --trusted-list '@ip [ ... ]' ] [ --trusted-icmp '@ip [ ... ]' ]  add | del  rule [ ... ]
+$0 [ -f | --file ConfFile ] [ -q | --quiet ] [ --network-interface iface ] [ --trusted-list '@ip [ ... ]' ] [ --trusted-icmp '@ip [ ... ]' ] profile profileName
+$0 modules
+$0 [ -f | --file ConfFile ] [ -q | --quiet ] [ --network-interface iface ] [ --trusted-list '@ip [ ... ]' ] [ --trusted-icmp '@ip [ ... ]' ]  add | del  moduleName [ ... ]
 $0 [ -h | --help ]
 EOF
 }
@@ -101,25 +101,25 @@ done
 
 
 ###############################################################################
-# Args : list, rule or profile
+# Args
 
-do_list_rules() {
+do_list_modules() {
 	local rc="$1"
-	ls -1 "$ROOT_DIR/rules"
+	ls -1 "$ROOT_DIR/modules"
 	[ -z "$rc" ] && exit 0 || exit $rc
 }
 
-do_load_rule() {
+do_load_modules() {
 	local action="$1"
 	[ "$action" == 'add' ] && local actFlg='-A'
 	[ "$action" == 'del' ] && local actFlg='-D'
 
 	shift
-	for rule in $@; do
-		local ruleFile="$ROOT_DIR/rules/$rule"
-		[ -f "$ruleFile" ] || do_list_rules 1
+	for module in $@; do
+		local moduleFile="$ROOT_DIR/modules/$module"
+		[ -f "$moduleFile" ] || do_list_modules 1
 
-		source "$ruleFile"
+		source "$moduleFile"
 	done
 }
 
@@ -127,8 +127,8 @@ case "$1" in
 	clear|start|status|zero) $0 profile $1 ;;
 	profile) [ -f "$PROFILES_DIR/$2.sh" ] || { usage >&2 ; exit 1 ; }
            source "$PROFILES_DIR/$2.sh" ;;
-	add|del) do_load_rule "$@" ;;
-	rules)   do_list_rules     ;;
+	add|del) do_load_modules "$@" ;;
+	modules) do_list_modules      ;;
 	*)       usage >&2 ; exit 1 ;;
 esac
 

@@ -7,24 +7,25 @@ source "$PROFILES_DIR/start/04_local"
 
 splitTcpUdp
 
-source "$PROFILES_DIR/start/10_rules-default-action"
-source "$RULES_DIR/bootps-bootpc"
-source "$RULES_DIR/in-ssh"
-source "$RULES_DIR/out-dns"
-source "$RULES_DIR/out-http"
-source "$RULES_DIR/out-https"
-source "$RULES_DIR/out-newbiecontest"
-source "$RULES_DIR/out-ntp"
-source "$RULES_DIR/out-smtp"
-source "$RULES_DIR/out-ssh"
-source "$RULES_DIR/out-whois"
-source "$RULES_DIR/icmp"
+readonly action='add'
+readonly actFlg='-A'
+source "$MODULES_DIR/bootps-bootpc"
+source "$MODULES_DIR/in-ssh"
+source "$MODULES_DIR/out-dns"
+source "$MODULES_DIR/out-http"
+source "$MODULES_DIR/out-https"
+source "$MODULES_DIR/out-newbiecontest"
+source "$MODULES_DIR/out-ntp"
+source "$MODULES_DIR/out-smtp"
+source "$MODULES_DIR/out-ssh"
+source "$MODULES_DIR/out-whois"
+source "$MODULES_DIR/icmp"
 source "$PROFILES_DIR/start/35_out-ping"
 source "$PROFILES_DIR/start/70_logging"
 source "$PROFILES_DIR/start/81_security"
 
 source "$PROFILES_DIR/start/84_blacklist"
-source "$RULES_DIR/in-port_knocking"
+source "$MODULES_DIR/in-port_knocking"
 
 for command in ip6tables iptables; do
 	for chain in INPUT OUTPUT FORWARD; do
