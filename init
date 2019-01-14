@@ -1,11 +1,29 @@
 #!/usr/bin/env bash
 
 ROOT_DIR="$(cd "$(dirname "$0")"; pwd)"
+PROFILES_DIR="$ROOT_DIR/profiles"
+RULES_DIR="$ROOT_DIR/rules"
 PATH=/sbin:$PATH
 
 
+###############################################################################
+# Libs
+
 isIpsetInstalled() {
 	which ipset &>/dev/null
+}
+
+
+splitTcpUdp() {
+	xargs -n1 iptables -N <<<'TCP_IN TCP_OUT UDP_IN UDP_OUT'
+
+	# TCP
+	iptables -m comment --comment "Split TCP   " -A  INPUT -p tcp -j TCP_IN
+	iptables -m comment --comment "Split TCP   " -A OUTPUT -p tcp -j TCP_OUT
+
+	# UDP
+	iptables -m comment --comment "Split UDP   " -A  INPUT -p udp -j UDP_IN
+	iptables -m comment --comment "Split UDP   " -A OUTPUT -p udp -j UDP_OUT
 }
 
 
@@ -23,8 +41,10 @@ do_monitor() {
 usage() {
 	cat <<EOF
 usages:
+$0 clear
+$0 start
 $0 status
-$0 profiles
+$0 zero
 $0 [ -f | --file ConfFile ] [ -q | --quiet ] [ --network-interface iface ] [ --trusted-list '@ip [ ... ]' ] [ --trusted-icmp '@ip [ ... ]' ] profile profilename
 $0 rules
 $0 [ -f | --file ConfFile ] [ -q | --quiet ] [ --network-interface iface ] [ --trusted-list '@ip [ ... ]' ] [ --trusted-icmp '@ip [ ... ]' ]  add | del  rule [ ... ]
@@ -83,12 +103,6 @@ done
 ###############################################################################
 # Args : list, rule or profile
 
-do_list_profiles() {
-	local rc="$1"
-	find "$ROOT_DIR/profiles" -follow | sort | sed "s,$ROOT_DIR/profiles,,;/^$/d;s,[^/]*/,|   ,g;s,| *\([^| ]\),+- \1,"
-	[ -z "$rc" ] && exit 0 || exit $rc
-}
-
 do_list_rules() {
 	local rc="$1"
 	ls -1 "$ROOT_DIR/rules"
@@ -109,27 +123,15 @@ do_load_rule() {
 	done
 }
 
-do_load_profile() {
-	local profileDir="$1"
-
-	[ -d "$profileDir" ] || do_list_profiles 1
-	for addons in "$profileDir"/*; do
-		if [ -f "$addons" ]; then
-			source "$addons"
-		else
-			do_load_profile "$addons"
-		fi
-	done
-}
-
 case "$1" in
 	add|del) do_load_rule "$@" ;;
-	profile)  [ -n "$2" ] || { usage >&2 ; exit 1 ; }
-            do_load_profile "$ROOT_DIR/profiles/$2"     ;;
-	status)   do_load_profile "$ROOT_DIR/profiles/status" ;;
-	zero)     do_load_profile "$ROOT_DIR/profiles/zero"   ;;
-	profiles) do_list_profiles ;;
-	rules)    do_list_rules    ;;
-	*)        usage >&2 ; exit 1 ;;
+	profile) [ -f "$PROFILES_DIR/$2.sh" ] || { usage >&2 ; exit 1 ; }
+           source "$PROFILES_DIR/$2.sh"     ;;
+	clear)   source "$PROFILES_DIR/clear.sh"  ;;
+	start)   source "$PROFILES_DIR/start.sh"  ;;
+	status)  source "$PROFILES_DIR/status.sh" ;;
+	zero)    source "$PROFILES_DIR/zero.sh"   ;;
+	rules)   do_list_rules    ;;
+	*)       usage >&2 ; exit 1 ;;
 esac
 
