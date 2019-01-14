@@ -124,14 +124,11 @@ do_load_rule() {
 }
 
 case "$1" in
-	add|del) do_load_rule "$@" ;;
+	clear|start|status|zero) $0 profile $1 ;;
 	profile) [ -f "$PROFILES_DIR/$2.sh" ] || { usage >&2 ; exit 1 ; }
-           source "$PROFILES_DIR/$2.sh"     ;;
-	clear)   source "$PROFILES_DIR/clear.sh"  ;;
-	start)   source "$PROFILES_DIR/start.sh"  ;;
-	status)  source "$PROFILES_DIR/status.sh" ;;
-	zero)    source "$PROFILES_DIR/zero.sh"   ;;
-	rules)   do_list_rules    ;;
+           source "$PROFILES_DIR/$2.sh" ;;
+	add|del) do_load_rule "$@" ;;
+	rules)   do_list_rules     ;;
 	*)       usage >&2 ; exit 1 ;;
 esac
 
