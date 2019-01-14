@@ -39,6 +39,9 @@ do_monitor() {
 
 
 usage() {
+	local rc="$1"
+	[ -z "$rc" ] && local rc=0
+	[ $rc -gt 0 ] && exec >&2
 	cat <<EOF
 usages:
 $0 clear
@@ -50,6 +53,7 @@ $0 modules
 $0 [ -f | --file ConfFile ] [ -q | --quiet ] [ --network-interface iface ] [ --trusted-list '@ip [ ... ]' ] [ --trusted-icmp '@ip [ ... ]' ]  add | del  moduleName [ ... ]
 $0 [ -h | --help ]
 EOF
+	exit $rc
 }
 
 
@@ -68,7 +72,7 @@ TRUSTED_ICMP=''
 [ -r '/etc/default/iptables-init' ] && source '/etc/default/iptables-init'
 
 TEMP="$(getopt --quiet --options hqf: --longoptions help,quiet,file:,network-interface:,trusted-list:,trusted-icmp: -- "$@")"
-[ $? == 0 ] || { usage >&2; exit 1; }
+[ $? == 0 ] || usage 1
 
 # Config file passed in command line > Default config file
 eval set -- "$TEMP"
@@ -93,9 +97,9 @@ while true; do
 		--trusted-list)      TRUSTED_LST="$2"  ; shift 2 ;;
 		--trusted-icmp)      TRUSTED_ICMP="$2" ; shift 2 ;;
 		-q | --quiet)        QUIET=true        ; shift   ;;
-		--) shift ; break  ;;
-		-h | --help) usage     ; exit 0 ;;
-		*)           usage >&2 ; exit 1 ;;
+		--) shift ; break    ;;
+		-h | --help) usage   ;;
+		*)           usage 1 ;;
 	esac
 done
 
@@ -125,10 +129,10 @@ do_load_modules() {
 
 case "$1" in
 	clear|start|status|zero) $0 profile $1 ;;
-	profile) [ -f "$PROFILES_DIR/$2.sh" ] || { usage >&2 ; exit 1 ; }
+	profile) [ -f "$PROFILES_DIR/$2.sh" ] || usage 1
            source "$PROFILES_DIR/$2.sh" ;;
 	add|del) do_load_modules "$@" ;;
 	modules) do_list_modules      ;;
-	*)       usage >&2 ; exit 1 ;;
+	*)       usage 1              ;;
 esac
 
