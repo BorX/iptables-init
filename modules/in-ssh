@@ -1,12 +1,16 @@
 #!/usr/bin/env bash
 
-if [ -n "$TRUSTED_LST" ] && isIpsetInstalled; then
-	ipset create trustedLst -exist hash:net family inet hashsize 16384 maxelem 10; ipset flush trustedLst
-	for host in $TRUSTED_LST; do ipset add -exist trustedLst $host; done
-	iptables -m comment --comment " IN SSH            " $actFlg TCP_IN  -i $NTWK_INTFCE -m conntrack --ctstate NEW,ESTABLISHED -p tcp --dport 443 -m set --match-set trustedLst src -j ACCEPT
-	iptables -m comment --comment " IN SSH            " $actFlg TCP_OUT -o $NTWK_INTFCE -m conntrack --ctstate     ESTABLISHED -p tcp --sport 443 -m set --match-set trustedLst dst -j ACCEPT
-else
-	iptables -m comment --comment " IN SSH            " $actFlg TCP_IN  -i $NTWK_INTFCE -m conntrack --ctstate NEW,ESTABLISHED -p tcp --dport 443 -j ACCEPT
-	iptables -m comment --comment " IN SSH            " $actFlg TCP_OUT -o $NTWK_INTFCE -m conntrack --ctstate     ESTABLISHED -p tcp --sport 443 -j ACCEPT
-fi
+applyModule() {
+	local action="$1"
+
+	if [ -n "$TRUSTED_LST" ] && isIpsetInstalled; then
+		ipset create trustedLst -exist hash:net family inet hashsize 16384 maxelem 20; ipset flush trustedLst
+		for host in $TRUSTED_LST; do ipset add -exist trustedLst $host; done
+		iptables -m comment --comment " IN SSH            " $action TCP_IN  -i $NTWK_INTFCE -m conntrack --ctstate NEW,ESTABLISHED -p tcp --dport 443 -m set --match-set trustedLst src -j ACCEPT
+		iptables -m comment --comment " IN SSH            " $action TCP_OUT -o $NTWK_INTFCE -m conntrack --ctstate     ESTABLISHED -p tcp --sport 443 -m set --match-set trustedLst dst -j ACCEPT
+	else
+		iptables -m comment --comment " IN SSH            " $action TCP_IN  -i $NTWK_INTFCE -m conntrack --ctstate NEW,ESTABLISHED -p tcp --dport 443 -j ACCEPT
+		iptables -m comment --comment " IN SSH            " $action TCP_OUT -o $NTWK_INTFCE -m conntrack --ctstate     ESTABLISHED -p tcp --sport 443 -j ACCEPT
+	fi
+}
 

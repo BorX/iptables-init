@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 
-isIpsetInstalled && {
+applyModule() {
+	local action="$1"
+
+	isIpsetInstalled || return 1
+
 	ipset list -n | grep -q blacklist$ || "$ROOT_DIR/blacklistctl" update
 	ipset create blacklist-live -exist hash:net family inet hashsize 16384 maxelem 16384
 
@@ -22,6 +26,10 @@ isIpsetInstalled && {
 	iptables -A BLACKLIST -j SET --add-set blacklist-live src
 	iptables -A BLACKLIST -j DROP
 
-
 	iptables -A INPUT -j BLACKLIST
 }
+
+disableModule() {
+	echo 'Not implemented'
+}
+

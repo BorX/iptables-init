@@ -7,3 +7,4 @@ for command in ip6tables iptables; do
 done
 
 source "$PROFILES_DIR/status.sh"
+

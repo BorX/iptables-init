@@ -2,18 +2,18 @@
 
 iptables -F DOCKER-USER
 
-[ "$action" == 'del' ] && {
+disableModule() {
 	iptables -m comment --comment "OUT Docker  " -D OUTPUT -o docker0 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
 	iptables -m comment --comment "OUT Docker  " -D  INPUT -i docker0 -m conntrack --ctstate     ESTABLISHED -j ACCEPT
 
 	iptables -m comment --comment "Deny Docker " -A DOCKER-USER -j DROP
 }
 
-[ "$action" == 'add' ] && {
-	position=$(iptables --table filter -nvL OUTPUT --line-number | awk '/Local/ { print $1 }')
+enableModule() {
+	local position=$(iptables --table filter -nvL OUTPUT --line-number | awk '/Local/ { print $1 }')
 	iptables -m comment --comment "OUT Docker  " -I OUTPUT $position -o docker0 -m conntrack --ctstate NEW,ESTABLISHED -j ACCEPT
 
-	position=$(iptables --table filter -nvL  INPUT --line-number | awk '/Local/ { print $1 }')
+	local position=$(iptables --table filter -nvL  INPUT --line-number | awk '/Local/ { print $1 }')
 	iptables -m comment --comment "OUT Docker  " -I  INPUT $position -i docker0 -m conntrack --ctstate     ESTABLISHED -j ACCEPT
 
 

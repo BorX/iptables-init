@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 
-ROOT_DIR="$(cd "$(dirname "$0")"; pwd)"
-PROFILES_DIR="$ROOT_DIR/profiles"
-MODULES_DIR="$ROOT_DIR/modules"
+readonly ROOT_DIR="$(cd "$(dirname "$0")"; pwd)"
+readonly PROFILES_DIR="$ROOT_DIR/profiles"
+readonly MODULES_DIR="$ROOT_DIR/modules"
 PATH=/sbin:$PATH
 
 
@@ -14,7 +14,33 @@ isIpsetInstalled() {
 }
 
 
-splitTcpUdp() {
+moduleHelper_apply() {
+	local moduleFile="$1"
+	local moduleAction="$2"
+
+	applyModule()   { true; }
+	enableModule()  { applyModule --append; }
+	disableModule() { applyModule --delete; }
+	source $moduleFile
+	[ "$moduleAction" ==  'enmod' ] && enableModule
+	[ "$moduleAction" == 'dismod' ] && disableModule
+	unset applyModule enableModule disableModule
+}
+
+
+moduleHelper_enable() {
+	local moduleFile="$1"
+	moduleHelper_apply "$moduleFile" 'enmod'
+}
+
+
+moduleHelper_disable() {
+	local moduleFile="$1"
+	moduleHelper_apply "$moduleFile" 'dismod'
+}
+
+
+iptablesInit_splitTcpUdp() {
 	xargs -n1 iptables -N <<<'TCP_IN TCP_OUT UDP_IN UDP_OUT'
 
 	# TCP
@@ -24,6 +50,22 @@ splitTcpUdp() {
 	# UDP
 	iptables -m comment --comment "Split UDP   " -A  INPUT -p udp -j UDP_IN
 	iptables -m comment --comment "Split UDP   " -A OUTPUT -p udp -j UDP_OUT
+}
+
+
+do_save() {
+	local saveDir="$ROOT_DIR/save-$(date +%Y%m%d-%H%M%S)"
+	mkdir -p "$saveDir"
+	ipset    save >"$saveDir/ipset"
+	iptables-save >"$saveDir/iptables"
+	ln -s "$saveDir" "$ROOT_DIR/save-previous"
+}
+
+
+do_restore() {
+	local restoreDir="$ROOT_DIR/save-previous"
+	ipset    restore <"$restoreDir/ipset"
+	iptables-restore <"$restoreDir/iptables"
 }
 
 
@@ -50,7 +92,7 @@ $0 status
 $0 zero
 $0 [ -f | --file ConfFile ] [ -q | --quiet ] [ --network-interface iface ] [ --trusted-list '@ip [ ... ]' ] [ --trusted-icmp '@ip [ ... ]' ] profile profileName
 $0 modules
-$0 [ -f | --file ConfFile ] [ -q | --quiet ] [ --network-interface iface ] [ --trusted-list '@ip [ ... ]' ] [ --trusted-icmp '@ip [ ... ]' ]  add | del  moduleName [ ... ]
+$0 [ -f | --file ConfFile ] [ -q | --quiet ] [ --network-interface iface ] [ --trusted-list '@ip [ ... ]' ] [ --trusted-icmp '@ip [ ... ]' ]  enmod | dismod  moduleName [ ... ]
 $0 [ -h | --help ]
 EOF
 	exit $rc
@@ -115,24 +157,22 @@ do_list_modules() {
 
 do_load_modules() {
 	local action="$1"
-	[ "$action" == 'add' ] && local actFlg='-A'
-	[ "$action" == 'del' ] && local actFlg='-D'
-
 	shift
 	for module in $@; do
 		local moduleFile="$ROOT_DIR/modules/$module"
 		[ -f "$moduleFile" ] || do_list_modules 1
 
-		source "$moduleFile"
+		[ "$action" ==  'enmod' ] && iptablesInit_enableModule
+		[ "$action" == 'dismod' ] && iptablesInit_disableModule
 	done
 }
 
 case "$1" in
 	clear|start|status|zero) $0 profile $1 ;;
-	profile) [ -f "$PROFILES_DIR/$2.sh" ] || usage 1
-           source "$PROFILES_DIR/$2.sh" ;;
-	add|del) do_load_modules "$@" ;;
-	modules) do_list_modules      ;;
-	*)       usage 1              ;;
+	profile)      [ -f "$PROFILES_DIR/$2.sh" ] || usage 1
+                source "$PROFILES_DIR/$2.sh" ;;
+	enmod|dismod) do_load_modules "$@" ;;
+	modules)      do_list_modules      ;;
+	*)            usage 1              ;;
 esac
 

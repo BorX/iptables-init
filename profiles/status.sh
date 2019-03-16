@@ -6,3 +6,4 @@ for command in ip6tables iptables; do
 		$command --table $table -nvL
 	done
 done
+

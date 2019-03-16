@@ -1,5 +1,0 @@
-#!/usr/bin/env bash
-
-iptables -m comment --comment "Local       " -A  INPUT -i lo -j ACCEPT
-iptables -m comment --comment "Local       " -A OUTPUT -o lo -j ACCEPT
-

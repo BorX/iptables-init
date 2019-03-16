@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
-iptables -m comment --comment "OUT HTTPS          " $actFlg TCP_OUT -o $NTWK_INTFCE -m conntrack --ctstate NEW,ESTABLISHED -p tcp --dport  443 -j ACCEPT
-iptables -m comment --comment "OUT HTTPS          " $actFlg TCP_IN  -i $NTWK_INTFCE -m conntrack --ctstate     ESTABLISHED -p tcp --sport  443 -j ACCEPT
+applyModule() {
+	local action="$1"
+
+	iptables -m comment --comment "OUT HTTPS          " $action TCP_OUT -o $NTWK_INTFCE -m conntrack --ctstate NEW,ESTABLISHED -p tcp --dport  443 -j ACCEPT
+	iptables -m comment --comment "OUT HTTPS          " $action TCP_IN  -i $NTWK_INTFCE -m conntrack --ctstate     ESTABLISHED -p tcp --sport  443 -j ACCEPT
+}
 

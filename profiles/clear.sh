@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 
-declare -A tables
-tables=(['security']='INPUT FORWARD OUTPUT' ['raw']='PREROUTING OUTPUT' ['mangle']='PREROUTING INPUT FORWARD OUTPUT POSTROUTING' ['nat']='PREROUTING INPUT OUTPUT POSTROUTING' ['filter']='INPUT FORWARD OUTPUT')
+declare -A chains
+chains=(['security']='INPUT FORWARD OUTPUT' ['raw']='PREROUTING OUTPUT' ['mangle']='PREROUTING INPUT FORWARD OUTPUT POSTROUTING' ['nat']='PREROUTING INPUT OUTPUT POSTROUTING' ['filter']='INPUT FORWARD OUTPUT')
 
 for command in iptables ip6tables; do
 	for table in security raw mangle nat filter; do
-		for chain in ${tables[$table]}; do
+		for chain in ${chains[$table]}; do
 			$command --table $table --policy $chain ACCEPT
 		done
 	done
@@ -39,3 +39,4 @@ else
 fi
 
 source "$PROFILES_DIR/status.sh"
+

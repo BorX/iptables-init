@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+applyModule() {
+	local action="$1"
+
+	iptables -m comment --comment "Local       " $action  INPUT -i lo -j ACCEPT
+	iptables -m comment --comment "Local       " $action OUTPUT -o lo -j ACCEPT
+}
+
