@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+
+enable() {
+	local backupDirName="$(date +%Y%m%d-%H%M%S)"
+	local backupDirPath="$ROOT_DIR/backups/$backupDirName"
+	local backupLink="$ROOT_DIR/backups/last"
+
+	mkdir -p "$backupDirPath"
+
+	ipset    save >"$backupDirPath/ipset"
+	iptables-save >"$backupDirPath/iptables"
+
+	[ -h "$backupLink" ] && {
+		rm "$backupLink"
+		ln -s "$backupDirName" "$backupLink"
+	}
+}
+
+
+disable() {
+	local restoreDir="$ROOT_DIR/backups/last"
+	ipset    restore <"$restoreDir/ipset"
+	iptables-restore <"$restoreDir/iptables"
+}
+

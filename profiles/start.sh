@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+enmod backup
+
 loadProfile clear
 
 enmod related-logging
@@ -31,8 +33,16 @@ done
 loadProfile status
 
 echo
-echo "La configuration sera annulée dans 60 secondes."
-echo "Appuyer sur CTRL-C pour l'appliquer définitivement..."
-sleep 60
+echo "Une sauvegarde de la configuration précédente sera appliquée dans 30 secondes."
+echo "Appuyer sur CTRL-C pour appliquer définitivement la nouvelle configuration..."
+sleep 30
+dismod backup
+echo
+echo "La nouvelle configuration a été annulée par une restauration de la sauvegarde précédente."
+
+echo
+echo "Un nettoyage de toutes les tables sera appliqué dans 30 secondes."
+echo "Appuyer sur CTRL-C pour garder la configuration actuelle..."
+sleep 30
 loadProfile clear
 
