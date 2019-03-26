@@ -3,6 +3,7 @@
 readonly ROOT_DIR="$(cd "$(dirname "$0")"; pwd)"
 readonly PROFILES_DIR="$ROOT_DIR/profiles"
 readonly MODULES_DIR="$ROOT_DIR/modules"
+readonly OPTIONS_DEFAULT_CONFIG_FILE='/etc/default/iptables-init'
 PATH=/sbin:$PATH
 
 
@@ -43,7 +44,7 @@ moduleHelper() {
 	local moduleFile="$MODULES_DIR/$moduleName"
 	[ -f "$moduleFile" ] || do_list_modules 1
 
-	( # May override functions
+	( # May override functions ("apply", "enable", "disable") in a subshell
 		source "$moduleFile"
 		$action
 	)
@@ -52,13 +53,13 @@ moduleHelper() {
 
 enmod() {
 	local moduleName="$1"
-	moduleHelper enable "$moduleName"
+	moduleHelper 'enable' "$moduleName"
 }
 
 
 dismod() {
 	local moduleName="$1"
-	moduleHelper disable "$moduleName"
+	moduleHelper 'disable' "$moduleName"
 }
 
 
@@ -81,75 +82,89 @@ do_load_modules() {
 }
 
 
+###############################################################################
+# Options
+
+options_initDefaults() {
+	QUIET=false
+	NTWK_INTFCE=eth0
+	TRUSTED_LST=''
+	TRUSTED_ICMP=''
+}
+
+
+options_loadDefaultConfigFile() {
+	[ -r "$OPTIONS_DEFAULT_CONFIG_FILE" ] && source "$OPTIONS_DEFAULT_CONFIG_FILE"
+}
+
+
+options_loadConfigFile() {
+	eval set -- "$OPTS_FROM_CMD_LINE"
+	while true; do
+		case "$1" in
+			-f | --file)
+				local configFile="$2"
+				[ -r "$configFile" ] || { echo >&2 "$configFile n'est pas lisible"; exit 2; }
+				source "$configFile"
+				shift 2
+				;;
+			--) shift ; break  ;;
+			*)  shift          ;;
+		esac
+	done
+}
+
+
+options_commandLine() {
+	eval set -- "$OPTS_FROM_CMD_LINE"
+	while true; do
+		case "$1" in
+			-f | --file)                             shift 2 ;;
+			--network-interface) NTWK_INTFCE="$2"  ; shift 2 ;;
+			--trusted-list)      TRUSTED_LST="$2"  ; shift 2 ;;
+			--trusted-icmp)      TRUSTED_ICMP="$2" ; shift 2 ;;
+			-q | --quiet)        QUIET=true        ; shift   ;;
+			--) shift ; break    ;;
+			-h | --help) usage   ;;
+			*)           usage 1 ;;
+		esac
+	done
+}
+
+
+###############################################################################
+# Commande line
+###############################################################################
+
 usage() {
 	local rc="$1"
 	[ -z "$rc" ] && local rc=0
 	[ $rc -gt 0 ] && exec >&2
 	cat <<EOF
 usages:
-$0 clear
-$0 start
-$0 status
-$0 zero
-$0 profile profileName
-$0 modules
-$0 enmod | dismod  moduleName [ ... ]
+$0 clear                                 - Loads profile 'clear' who cleans all tables
+$0 start                                 - Loads profile 'start' who initializes amazing set of modules
+$0 status                                - Loads profile 'status' who lists all rules in all tables
+$0 zero                                  - Loads profile 'zero' who zeros the packet counters in all chains of all tables
+$0 profile profileName                   - Loads profile defined by 'profileName'
+$0 modules                               - Lists all modules available
+$0 enmod | dismod  moduleName [ ... ]    - Enables or disables a set of modules defined by an enumeration of 'moduleName'
 $0 [ -f | --file ConfFile ] [ -q | --quiet ] [ --network-interface iface ] [ --trusted-list '@ip [ ... ]' ] [ --trusted-icmp '@ip [ ... ]' ] ...
 $0 [ -h | --help ]
 EOF
 	exit $rc
 }
 
-
-###############################################################################
-# Options
-
-# Settings passed in command line  >  Config file passed in command line  >  Default config file  >  Default options
-
-# Default options
-QUIET=false
-NTWK_INTFCE=eth0
-TRUSTED_LST=''
-TRUSTED_ICMP=''
-
-# Default config file > Default options
-[ -r '/etc/default/iptables-init' ] && source '/etc/default/iptables-init'
-
-TEMP="$(getopt --quiet --options hqf: --longoptions help,quiet,file:,network-interface:,trusted-list:,trusted-icmp: -- "$@")"
+readonly OPTS_FROM_CMD_LINE="$(getopt --quiet --options hqf: --longoptions help,quiet,file:,network-interface:,trusted-list:,trusted-icmp: -- "$@")"
 [ $? == 0 ] || usage 1
 
-# Config file passed in command line > Default config file
-eval set -- "$TEMP"
-while true; do
-	case "$1" in
-		-f | --file)
-			[ -r "$2" ] || { echo >&2 "$2 n'est pas lisible"; exit 2; }
-			source "$2"
-			shift 2
-			;;
-		--) shift ; break  ;;
-		*)  shift          ;;
-	esac
-done
 
-# Settings passed in command line > Config files
-eval set -- "$TEMP"
-while true; do
-	case "$1" in
-		-f | --file)                             shift 2 ;;
-		--network-interface) NTWK_INTFCE="$2"  ; shift 2 ;;
-		--trusted-list)      TRUSTED_LST="$2"  ; shift 2 ;;
-		--trusted-icmp)      TRUSTED_ICMP="$2" ; shift 2 ;;
-		-q | --quiet)        QUIET=true        ; shift   ;;
-		--) shift ; break    ;;
-		-h | --help) usage   ;;
-		*)           usage 1 ;;
-	esac
-done
+# Settings passed in command line  >  Config file passed in command line  >  Default config file  >  Default options
+options_initDefaults
+options_loadDefaultConfigFile
+options_loadConfigFile
+options_commandLine
 
-
-###############################################################################
-# Args
 
 case "$1" in
 	clear|start|status|zero)
