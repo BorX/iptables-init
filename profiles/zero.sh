@@ -6,5 +6,5 @@ for command in ip6tables iptables; do
 	done
 done
 
-source "$PROFILES_DIR/status.sh"
+loadProfile status
 

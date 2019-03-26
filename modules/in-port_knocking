@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-applyModule() {
+apply() {
 	local action="$1"
 
 	iptables -m comment --comment " IN PORT-KNOCKING  " $action TCP_IN  -i $NTWK_INTFCE -m conntrack --ctstate NEW             -p tcp --dport ${PK_PORTS[0]}                                                         -j knock1
@@ -12,7 +12,7 @@ applyModule() {
 }
 
 
-enableModule() {
+enable() {
 	iptables -N knock1
 	iptables -A knock1 -m recent --set    --name knock1 --rsource -j DROP
 
@@ -34,12 +34,12 @@ enableModule() {
 	#iptables -N knock5
 	#iptables -A knock5 -m recent --remove --name knock4 --rsource -j ACCEPT
 
-	applyModule --append
+	apply --append
 }
 
 
-disableModule() {
-	applyModule --delete
+disable() {
+	apply --delete
 
 	[ "$1" == 'down' ] && {
 		for i in {1..4}; do

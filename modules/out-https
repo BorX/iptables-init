@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-applyModule() {
+apply() {
 	local action="$1"
 
 	iptables -m comment --comment "OUT HTTPS          " $action TCP_OUT -o $NTWK_INTFCE -m conntrack --ctstate NEW,ESTABLISHED -p tcp --dport  443 -j ACCEPT

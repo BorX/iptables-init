@@ -38,5 +38,5 @@ else
 	done
 fi
 
-source "$PROFILES_DIR/status.sh"
+loadProfile status
 

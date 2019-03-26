@@ -8,74 +8,75 @@ PATH=/sbin:$PATH
 
 ###############################################################################
 # Libs
+###############################################################################
 
 isIpsetInstalled() {
 	which ipset &>/dev/null
 }
 
 
-moduleHelper_apply() {
-	local moduleFile="$1"
-	local moduleAction="$2"
+###############################################################################
+# Profile Helpers
 
-	applyModule()   { true; }
-	enableModule()  { applyModule --append; }
-	disableModule() { applyModule --delete; }
-	source $moduleFile
-	[ "$moduleAction" ==  'enmod' ] && enableModule
-	[ "$moduleAction" == 'dismod' ] && disableModule
-	unset applyModule enableModule disableModule
+loadProfile() {
+	local profileName="$1"
+	local profileFile="$PROFILES_DIR/$profileName.sh"
+
+	[ -f "$profileFile" ] || usage 1
+	source "$profileFile"
 }
 
 
-moduleHelper_enable() {
-	local moduleFile="$1"
-	moduleHelper_apply "$moduleFile" 'enmod'
+###############################################################################
+# Module Helpers
+
+# Default functions for modules ; may be overrided
+apply()   { true; }
+enable()  { apply --append; }
+disable() { apply --delete; }
+
+
+moduleHelper() {
+	local action="$1"
+	local moduleName="$2"
+
+	local moduleFile="$MODULES_DIR/$moduleName"
+	[ -f "$moduleFile" ] || do_list_modules 1
+
+	( # May override functions
+		source "$moduleFile"
+		$action
+	)
 }
 
 
-moduleHelper_disable() {
-	local moduleFile="$1"
-	moduleHelper_apply "$moduleFile" 'dismod'
+enmod() {
+	local moduleName="$1"
+	moduleHelper enable "$moduleName"
 }
 
 
-iptablesInit_splitTcpUdp() {
-	xargs -n1 iptables -N <<<'TCP_IN TCP_OUT UDP_IN UDP_OUT'
-
-	# TCP
-	iptables -m comment --comment "Split TCP   " -A  INPUT -p tcp -j TCP_IN
-	iptables -m comment --comment "Split TCP   " -A OUTPUT -p tcp -j TCP_OUT
-
-	# UDP
-	iptables -m comment --comment "Split UDP   " -A  INPUT -p udp -j UDP_IN
-	iptables -m comment --comment "Split UDP   " -A OUTPUT -p udp -j UDP_OUT
+dismod() {
+	local moduleName="$1"
+	moduleHelper disable "$moduleName"
 }
 
 
-do_save() {
-	local saveDir="$ROOT_DIR/save-$(date +%Y%m%d-%H%M%S)"
-	mkdir -p "$saveDir"
-	ipset    save >"$saveDir/ipset"
-	iptables-save >"$saveDir/iptables"
-	ln -s "$saveDir" "$ROOT_DIR/save-previous"
+###############################################################################
+# Actions
+
+do_list_modules() {
+	local rc="$1"
+	ls -1 "$MODULES_DIR"
+	[ -z "$rc" ] && exit 0 || exit $rc
 }
 
 
-do_restore() {
-	local restoreDir="$ROOT_DIR/save-previous"
-	ipset    restore <"$restoreDir/ipset"
-	iptables-restore <"$restoreDir/iptables"
-}
-
-
-do_monitor() {
-	iptables -Z
-	local begin="$(date +%s)"
-	while sleep 60; do
-		clear
-		printf 'Depuis '; date -d "@$(($(date +%s) - $begin))" --utc '+%H:%M'
-		iptables -nvL
+do_load_modules() {
+	local action="$1"
+	shift
+	for moduleName in $@; do
+		$action "$moduleName"
 	done
 }
 
@@ -90,9 +91,10 @@ $0 clear
 $0 start
 $0 status
 $0 zero
-$0 [ -f | --file ConfFile ] [ -q | --quiet ] [ --network-interface iface ] [ --trusted-list '@ip [ ... ]' ] [ --trusted-icmp '@ip [ ... ]' ] profile profileName
+$0 profile profileName
 $0 modules
-$0 [ -f | --file ConfFile ] [ -q | --quiet ] [ --network-interface iface ] [ --trusted-list '@ip [ ... ]' ] [ --trusted-icmp '@ip [ ... ]' ]  enmod | dismod  moduleName [ ... ]
+$0 enmod | dismod  moduleName [ ... ]
+$0 [ -f | --file ConfFile ] [ -q | --quiet ] [ --network-interface iface ] [ --trusted-list '@ip [ ... ]' ] [ --trusted-icmp '@ip [ ... ]' ] ...
 $0 [ -h | --help ]
 EOF
 	exit $rc
@@ -149,28 +151,10 @@ done
 ###############################################################################
 # Args
 
-do_list_modules() {
-	local rc="$1"
-	ls -1 "$ROOT_DIR/modules"
-	[ -z "$rc" ] && exit 0 || exit $rc
-}
-
-do_load_modules() {
-	local action="$1"
-	shift
-	for module in $@; do
-		local moduleFile="$ROOT_DIR/modules/$module"
-		[ -f "$moduleFile" ] || do_list_modules 1
-
-		[ "$action" ==  'enmod' ] && iptablesInit_enableModule
-		[ "$action" == 'dismod' ] && iptablesInit_disableModule
-	done
-}
-
 case "$1" in
-	clear|start|status|zero) $0 profile $1 ;;
-	profile)      [ -f "$PROFILES_DIR/$2.sh" ] || usage 1
-                source "$PROFILES_DIR/$2.sh" ;;
+	clear|start|status|zero)
+	              loadProfile "$1"     ;;
+	profile)      loadProfile "$2"     ;;
 	enmod|dismod) do_load_modules "$@" ;;
 	modules)      do_list_modules      ;;
 	*)            usage 1              ;;
